@@ -205,6 +205,70 @@ namespace Polaris.API
         BossSpider = 524544,
     }
 
+    /// <summary>
+    /// 技能分类（位标志）。<b>独立编号</b>，不跟随游戏内部的 <c>SKILL_CTG</c>：那个枚举的数值随版本调整，
+    /// 直接暴露或强制转换会让模组在下一次游戏更新后静默错位。映射表在 <c>GameSkill</c> 内部显式维护。
+    /// </summary>
+    [System.Flags]
+    public enum GameSkillCategory
+    {
+        /// <summary>不属于任何已知分类，或分类信息读不出来。</summary>
+        None = 0,
+
+        /// <summary>近身攻击类。</summary>
+        Melee = 1 << 0,
+
+        /// <summary>魔法类。</summary>
+        Magic = 1 << 1,
+
+        /// <summary>防御与回避类。</summary>
+        Guard = 1 << 2,
+
+        /// <summary>体力上限成长类。</summary>
+        HpGrowth = 1 << 3,
+
+        /// <summary>魔力上限成长类。</summary>
+        MpGrowth = 1 << 4,
+
+        /// <summary>剧情或系统授予的特殊技能。</summary>
+        Special = 1 << 5,
+
+        /// <summary>仅 Alice 可用。</summary>
+        AliceOnly = 1 << 6,
+
+        /// <summary>仅 Noel 可用。</summary>
+        NoelOnly = 1 << 7,
+    }
+
+    /// <summary>
+    /// 查询"这个游戏内插件现在能不能启用"，以及一次 <c>SetActive</c> 的确定结果。
+    /// 每个值只表示一种原因，不把"查询状态"和"操作失败"混在同一个值里：
+    /// <see cref="Active"/>/<see cref="Inactive"/> 描述当前状态，其余描述一次拒绝的具体原因。
+    /// </summary>
+    public enum GameEnhancerActivationStatus
+    {
+        /// <summary>已获得、槽位足够、原版规则允许，当前处于<b>未启用</b>状态，可以启用。</summary>
+        Inactive = 0,
+
+        /// <summary>当前已经启用。</summary>
+        Active = 1,
+
+        /// <summary>当前存档还没有获得这个插件。</summary>
+        NotObtained = 2,
+
+        /// <summary>存档或物品存储尚未就绪（还在标题画面、读档中）。</summary>
+        StorageUnavailable = 3,
+
+        /// <summary>剩余槽位不足以容纳这个插件的 <c>Cost</c>。</summary>
+        NotEnoughSlots = 4,
+
+        /// <summary>原版规则当前禁止改动插件（例如 <c>EnemySummoner.isActiveBorder()</c> 期间）。</summary>
+        RejectedByState = 5,
+
+        /// <summary>底层调用抛异常或写入未生效。</summary>
+        Failed = 6,
+    }
+
     /// <summary>物品分类（位标志，数值与 <c>NelItem.CATEG</c> 一致）；判断单项属性优先用 <see cref="GameItem"/> 上的 <c>IsFood</c>/<c>IsTool</c> 等属性。</summary>
     [System.Flags]
     public enum GameItemCategory

@@ -85,12 +85,25 @@ PolarisAPI.Game.Input.WasPressed(GameInputAction.Cancel)
 
 ## 迁移方式
 
-如果需要兼容已有模组，先将旧入口标记为 `Obsolete` 并转发到新入口，在下一个允许破坏性变更的版本
-删除：
+原计划是先标记 `Obsolete` 再删除。实际执行时按 v3 的破坏性变更窗口处理，旧入口<b>直接移除</b>，
+不保留转发层——保留第二份入口正是本文要消除的问题。
 
-| 旧 API | 新 API |
-| --- | --- |
-| `PolarisAPI.GameMenu.IsOpen` | `PolarisAPI.Game.Menu.IsOpen` |
-| `PolarisAPI.GameMenu.Pause()` | `PolarisAPI.Game.Menu.Open/TryOpen` |
-| `PolarisAPI.GameMenu.Resume()` | `PolarisAPI.Game.Menu.Current?.Close()` |
-| `Game.World.SetPauseSimulation(bool)` | `PolarisAPI.GameMenu.SetWorldPause(bool)` |
+## 迁移状态（已完成）
+
+以下迁移已经落地，`Polaris.GameApi.Tests` 中有对应的负向表面测试守着，旧入口一旦被加回来即失败：
+
+| 旧 API | 新 API | 状态 |
+| --- | --- | --- |
+| `PolarisAPI.GameMenu.IsOpen` | `PolarisAPI.Game.Menu.IsOpen` | 已移除 |
+| `PolarisAPI.GameMenu.Pause()` | `PolarisAPI.Game.Menu.Open/TryOpen` | 已移除 |
+| `PolarisAPI.GameMenu.Resume()` | `PolarisAPI.Game.Menu.Current?.Close()` | 已移除 |
+| `Game.World.SetPauseSimulation(bool)` | `PolarisAPI.GameMenu.SetWorldPause(bool)` | 已移除 |
+
+配套变更：
+
+- `Game.Menu.Open/TryOpen` 走 `NelM2DBase.menu_open` 的原版正常请求流程，GameAPI 内不再存在
+  直接调用 `UiGameMenu.activate()` 的第二套打开路径。
+- `GameMenu` 包装器覆盖「请求已接受 → 打开 → 关闭/取消」整段生命周期：待处理期间
+  `Menu.IsOpen == false`、`Menu.Current == null`，实际打开以 `GameMenuOpened` 回调为准；
+  对待处理包装器调用 `Close()` 会撤回请求。
+- v3 表格已同步：删除 `World.SetPauseSimulation`，补入 `Menu.IsOpen` 与 `Menu.TryOpen`。

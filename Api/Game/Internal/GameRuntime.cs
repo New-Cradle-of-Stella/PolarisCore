@@ -53,6 +53,12 @@ namespace Polaris.API
             InputBinding.Pump();
             GameAudioRuntime.Pump();
 
+            // 插件/技能的外部修改（原版菜单直接改 top_grade 或 manip_bits、事件指令
+            // GET/REM/ENABLE/DISABLESKILL）没有稳定的补丁点，统一靠每帧差分捕获。
+            // 只观察已经建过包装器的定义，不为此重建整个目录快照。
+            GameEnhancerRuntime.Pump();
+            GameSkillRuntime.Pump();
+
             PumpInstances();
         }
 
@@ -66,6 +72,8 @@ namespace Polaris.API
             GameMenu.SweepMenus();
             GameStorage.SweepStorages();
             GameEvent.SweepEvents();
+            GameEnhancer.SweepEnhancers();
+            GameSkill.SweepSkills();
         }
 
         /// <summary>世界卸载/回到标题时的整体作废。</summary>
@@ -76,6 +84,13 @@ namespace Polaris.API
             GameEnemy.InvalidateAllEnemies();
             GameStorage.InvalidateAllStorages();
             GameQuest.InvalidateAllQuests();
+
+            // 插件/技能的目录对象在新游戏与读档时并<b>不</b>重建：ENHA.newGame 只清槽位计数，
+            // SkillManager.newGame 是就地重置同一批 PrSkill 的状态字段。所以这里刻意不作废包装器
+            // （那会白白丢掉调用方持有的实例身份），只清空观察基线：下一帧把存档值当成新基线记录，
+            // 不发回调，避免读档产生初值风暴。真正换了目录对象时，InstanceTable 会自然给出新身份。
+            GameEnhancerRuntime.Reset();
+            GameSkillRuntime.Reset();
             GameEventRuntime.Reset();
             GameAudioRuntime.ReleaseAll();
 

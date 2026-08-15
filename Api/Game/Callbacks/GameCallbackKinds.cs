@@ -163,6 +163,21 @@ namespace Polaris.API
         /// <summary>该物品实例实际被使用后触发。</summary>
         ItemUsed,
 
+        /// <summary>该插件实例的获得状态实际变化后触发。</summary>
+        EnhancerObtainedChanged,
+
+        /// <summary>该插件实例的启用状态实际变化<b>且</b>原版属性重算完成后触发。</summary>
+        EnhancerActiveChanged,
+
+        /// <summary>该技能实例的获得状态实际变化后触发。</summary>
+        SkillObtainedChanged,
+
+        /// <summary>该技能实例的启用状态实际变化<b>且</b>原版技能连接重算完成后触发。</summary>
+        SkillEnabledChanged,
+
+        /// <summary>该技能实例的操作方式配置实际变化后触发。</summary>
+        SkillManipulationChanged,
+
         /// <summary>该任务实例的阶段发生变化后触发。</summary>
         QuestUpdated,
 

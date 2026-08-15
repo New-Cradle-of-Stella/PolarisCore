@@ -229,6 +229,10 @@ namespace Polaris.API
                 return;
             }
 
+            // 不管这次激活是不是经由 Game.Menu.Open/TryOpen 的请求流程达成的（也可能是原版直接调用
+            // activate()），都要清掉"待激活"标志：包装器从这一刻起代表一个真正打开的菜单。
+            menu.ConfirmActivated();
+
             GameCallbackHub.PublishStatic(
                 GameStaticCallbackKind.GameMenuOpened, () => new GameMenuOpenedCallbackData(menu));
         }

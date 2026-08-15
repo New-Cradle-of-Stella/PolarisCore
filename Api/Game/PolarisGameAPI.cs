@@ -13,7 +13,12 @@ namespace Polaris
         /// <see cref="API.GamePlayer"/>/<see cref="API.GameCharacter"/> 等实例完成。
         /// 查询无副作用、取不到返回空值/零值、不抛异常；公开签名不出现游戏类型。
         /// </summary>
-        public static class Game
+        /// <remarks>
+        /// 声明为 <c>partial</c>：Enhancer 与 Skill 的静态入口各自住在
+        /// <c>PolarisGameEnhancersAPI.cs</c> / <c>PolarisGameSkillsAPI.cs</c>，这样两条实现轨不必
+        /// 反复改动同一个大文件。
+        /// </remarks>
+        public static partial class Game
         {
             /// <summary>只读查询的统一包装：取不到（游戏内部还没建好、或读取本身抛异常）就给回退值，绝不把异常漏给调用方。</summary>
             static TValue Safe<TValue>(Func<TValue> read, TValue fallback)
@@ -235,9 +240,6 @@ namespace Polaris
                 /// <summary>随机重新选择当前天气。</summary>
                 public static void ShuffleWeather() => NightAct("ShuffleWeather", static n => n.weatherShuffle());
 
-                /// <summary>设置游戏菜单打开时是否继续模拟世界（<c>false</c> 为原版暂停行为）；需要四个 Harmony 补丁全部生效才有效，否则是空操作。</summary>
-                public static void SetPauseSimulation(bool simulation) => GameMenuPauseRuntime.SetPolicy(!simulation);
-
                 /// <summary>设置夜晚系统记录的战斗次数。危险度的推进会参考它。</summary>
                 public static int BattleCount
                 {
@@ -312,46 +314,110 @@ namespace Polaris
                 public static GameStorage House => GameStorage.Wrap(GameBinding.HouseStorage);
             }
 
-            /// <summary>游戏内 ESC 菜单。</summary>
+            /// <summary>
+            /// 游戏内 ESC 菜单。查询、打开、关闭都归这里；"菜单打开时是否暂停世界"的策略和菜单分类注册
+            /// 归 <see cref="Polaris.GameMenuAPI"/>。<see cref="Open"/>/<see cref="TryOpen"/> 走原版
+            /// <c>menu_open</c> 正常请求流程，不直接调用 <c>UiGameMenu.activate()</c>。
+            /// </summary>
             public static class Menu
             {
-                /// <summary>取得当前游戏菜单实例；菜单未打开时返回 <c>null</c>。</summary>
-                public static GameMenu Current
-                {
-                    get
-                    {
-                        GameMenu menu = API.GameMenu.Wrap(GameBinding.Menu);
-                        return menu != null && menu.IsValid ? menu : null;
-                    }
-                }
+                /// <summary>菜单当前是否真正激活；只回答真实状态，待处理的打开请求不算已打开。</summary>
+                public static bool IsOpen => Safe(static () => GameBinding.Menu?.isActive() ?? false, false);
 
-                /// <summary>打开游戏菜单并返回实例；菜单已开着时直接返回当前实例，不重复打开。</summary>
+                /// <summary>取得当前游戏菜单实例；只在菜单真正激活后才非空，待处理请求期间返回 <c>null</c>。</summary>
+                public static GameMenu Current => Safe(
+                    static () =>
+                    {
+                        nel.gm.UiGameMenu native = GameBinding.Menu;
+                        return native != null && native.isActive() ? API.GameMenu.Wrap(native) : null;
+                    },
+                    null);
+
+                /// <summary>
+                /// 打开游戏菜单并返回代表这次请求的实例。菜单已经打开时直接返回当前实例，不重复请求；
+                /// 请求被接受但菜单尚未激活时，返回的实例 <see cref="API.GameMenu.IsValid"/> 为真但
+                /// <see cref="IsOpen"/>/<see cref="Current"/> 仍不认它，实际打开以
+                /// <see cref="GameStaticCallbackKind.GameMenuOpened"/> 回调为准。
+                /// </summary>
+                /// <exception cref="InvalidOperationException">世界未就绪，或原版状态拒绝了这次请求。</exception>
                 public static GameMenu Open()
                 {
-                    nel.gm.UiGameMenu native = GameBinding.Menu;
-                    if (native == null)
+                    if (TryRequestOpen(out GameMenu menu, out string failureReason))
                     {
-                        throw new InvalidOperationException("The game menu is not available yet; the world has not been entered.");
+                        return menu;
                     }
 
-                    GameMenu existing = Current;
-                    if (existing != null)
-                    {
-                        return existing;
-                    }
+                    throw new InvalidOperationException(failureReason ?? "The game refused to open the menu.");
+                }
 
+                /// <summary>
+                /// <see cref="Open"/> 的非抛异常版本：请求被接受（含"已经打开"和"已有请求待处理"）返回
+                /// <c>true</c> 并给出实例；世界未就绪或原版状态拒绝时返回 <c>false</c> 且 <paramref name="menu"/> 为 <c>null</c>。
+                /// </summary>
+                public static bool TryOpen(out GameMenu menu) => TryRequestOpen(out menu, out _);
+
+                static bool TryRequestOpen(out GameMenu menu, out string failureReason)
+                {
                     try
                     {
-                        native.activate();
+                        nel.NelM2DBase m2d = GameBinding.NelM2D;
+                        if (m2d == null || m2d.GM == null || m2d.curMap == null || m2d.PlayerNoel == null)
+                        {
+                            menu = null;
+                            failureReason = "The game menu is not ready.";
+                            return false;
+                        }
+
+                        if (m2d.GM.isActive())
+                        {
+                            // 已经打开：返回当前实例,不重复请求。
+                            menu = API.GameMenu.Wrap(m2d.GM);
+                            failureReason = null;
+                            return true;
+                        }
+
+                        if (m2d.menu_open_ == nel.NelM2DBase.MENU_OPEN.OPEN)
+                        {
+                            // 同一帧内已有请求在排队(比如被重复调用),复用同一个待处理包装器。
+                            menu = API.GameMenu.WrapForPendingRequest(m2d.GM);
+                            failureReason = null;
+                            return true;
+                        }
+
+                        if (!CanRequestNormalMenu(m2d))
+                        {
+                            menu = null;
+                            failureReason = "The current game state does not allow the ESC menu.";
+                            return false;
+                        }
+
+                        m2d.menu_open = nel.NelM2DBase.MENU_OPEN.OPEN;
+                        if (m2d.menu_open_ != nel.NelM2DBase.MENU_OPEN.OPEN)
+                        {
+                            menu = null;
+                            failureReason = "The game rejected the ESC menu request.";
+                            return false;
+                        }
+
+                        menu = API.GameMenu.WrapForPendingRequest(m2d.GM);
+                        failureReason = null;
+                        return true;
                     }
                     catch (Exception ex)
                     {
                         Errors.Report(ex, "Game.Menu.Open");
-                        throw new InvalidOperationException("The game refused to open the menu.", ex);
+                        menu = null;
+                        failureReason = "The game refused to open the menu.";
+                        return false;
                     }
-
-                    return API.GameMenu.Wrap(native);
                 }
+
+                static bool CanRequestNormalMenu(nel.NelM2DBase m2d)
+                    => m2d.can_open_gamemenu
+                       && m2d.pre_map_active
+                       && !m2d.transferring_game_stopping
+                       && !m2d.Freezer.isPausing()
+                       && !m2d.GM.isActive();
             }
 
             /// <summary>剧情事件。</summary>

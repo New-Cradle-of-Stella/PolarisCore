@@ -6,89 +6,13 @@ using Polaris.API;
 
 namespace Polaris
 {
-    /// <summary>游戏内 ESC 菜单的分类扩展 API，以及原版 ESC 菜单的打开/关闭与暂停世界控制。</summary>
+    /// <summary>游戏内 ESC 菜单的分类扩展 API，以及菜单打开时是否暂停世界的策略控制。</summary>
     public class GameMenuAPI
     {
         internal GameMenuAPI() { }
 
-        /// <summary>原版 ESC 菜单当前是否已经激活；待处理的打开请求不计入。</summary>
-        public bool IsOpen => GameBinding.NelM2D?.GM?.isActive() ?? false;
-
         /// <summary>普通 ESC 菜单打开时是否应暂停世界；默认 <c>true</c>，仅在当前进程有效。</summary>
         public bool PauseWorldWhileOpen => GameMenuPauseRuntime.PauseWorldWhileOpen;
-
-        /// <summary>请求打开原版 ESC 菜单（等同玩家按 ESC）。成功仅表示请求被接受，菜单要到本帧稍后才真正激活，此时 <see cref="IsOpen"/> 可能仍为 <c>false</c>。</summary>
-        public PolarisActionResult Pause()
-        {
-            try
-            {
-                NelM2DBase m2d = GameBinding.NelM2D;
-                if (m2d == null || m2d.GM == null || m2d.curMap == null || m2d.PlayerNoel == null)
-                {
-                    return PolarisActionResult.Fail(PolarisActionStatus.TargetUnavailable, "The game menu is not ready.");
-                }
-
-                if (m2d.GM.isActive() || m2d.menu_open_ == NelM2DBase.MENU_OPEN.OPEN)
-                {
-                    return PolarisActionResult.Ok();
-                }
-
-                if (!CanRequestNormalMenu(m2d))
-                {
-                    return PolarisActionResult.Fail(PolarisActionStatus.RejectedByState, "The current game state does not allow the ESC menu.");
-                }
-
-                m2d.menu_open = NelM2DBase.MENU_OPEN.OPEN;
-                if (m2d.menu_open_ != NelM2DBase.MENU_OPEN.OPEN)
-                {
-                    return PolarisActionResult.Fail(PolarisActionStatus.RejectedByState, "The game rejected the ESC menu request.");
-                }
-
-                return PolarisActionResult.Ok();
-            }
-            catch (Exception ex)
-            {
-                PolarisAPI.Errors.Report(ex, "GameMenu.Pause", typeof(GameMenuAPI).Assembly);
-                return PolarisActionResult.Fail(PolarisActionStatus.Failed, ex.Message);
-            }
-        }
-
-        /// <summary>取消待处理的 ESC 菜单打开请求，或关闭已激活的菜单；不会恢复事件/转场等其它系统的暂停。</summary>
-        public PolarisActionResult Resume()
-        {
-            try
-            {
-                NelM2DBase m2d = GameBinding.NelM2D;
-                if (m2d == null || m2d.GM == null)
-                {
-                    return PolarisActionResult.Fail(PolarisActionStatus.TargetUnavailable, "The game menu is not ready.");
-                }
-
-                if (!m2d.GM.isActive() && m2d.menu_open_ == NelM2DBase.MENU_OPEN.OPEN)
-                {
-                    m2d.menu_open = NelM2DBase.MENU_OPEN.NONE;
-                    return PolarisActionResult.Ok();
-                }
-
-                if (!m2d.GM.isActive())
-                {
-                    return PolarisActionResult.Ok();
-                }
-
-                if (!CanCloseAsEscMenu(m2d.GM))
-                {
-                    return PolarisActionResult.Fail(PolarisActionStatus.RejectedByState, "The active menu is in a non-interruptible state.");
-                }
-
-                m2d.GM.deactivate(false);
-                return PolarisActionResult.Ok();
-            }
-            catch (Exception ex)
-            {
-                PolarisAPI.Errors.Report(ex, "GameMenu.Resume", typeof(GameMenuAPI).Assembly);
-                return PolarisActionResult.Fail(PolarisActionStatus.Failed, ex.Message);
-            }
-        }
 
         /// <summary>设置 ESC 菜单打开时是否暂停世界（默认暂停）。进程级全局状态，不持久化。</summary>
         public PolarisActionResult SetWorldPause(bool enabled)
@@ -112,18 +36,6 @@ namespace Polaris
 
         /// <summary>由 <see cref="Plugin.Update"/> 每帧调用：外部暂停（事件/转场）结束后的所有权对账。</summary>
         internal void Pump() => GameMenuPauseRuntime.Pump();
-
-        static bool CanRequestNormalMenu(NelM2DBase m2d)
-            => m2d.can_open_gamemenu
-               && m2d.pre_map_active
-               && !m2d.transferring_game_stopping
-               && !m2d.Freezer.isPausing()
-               && !m2d.GM.isActive();
-
-        static bool CanCloseAsEscMenu(UiGameMenu gm)
-            => !gm.isClosingGame()
-               && gm.postype != UiGameMenu.POSTYPE.BENCH
-               && !GAMEOVER.isActive();
 
         /// <summary>一次 <see cref="AddCategory"/> 注册的完整信息。</summary>
         internal sealed class CategoryRegistration

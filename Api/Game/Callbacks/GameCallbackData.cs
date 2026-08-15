@@ -715,6 +715,95 @@ namespace Polaris.API
         public int Result { get; }
     }
 
+    /// <summary>插件实例的获得状态实际变化。</summary>
+    public sealed class EnhancerObtainedChangedCallbackData : GameCallbackData
+    {
+        internal EnhancerObtainedChangedCallbackData(GameEnhancer enhancer, bool previous, bool current)
+        {
+            Enhancer = enhancer;
+            Previous = previous;
+            Current = current;
+        }
+
+        public GameEnhancer Enhancer { get; }
+
+        public bool Previous { get; }
+
+        public bool Current { get; }
+    }
+
+    /// <summary>插件实例的启用状态实际变化；派发时原版属性/技能连接重算已经完成。</summary>
+    public sealed class EnhancerActiveChangedCallbackData : GameCallbackData
+    {
+        internal EnhancerActiveChangedCallbackData(GameEnhancer enhancer, bool previous, bool current)
+        {
+            Enhancer = enhancer;
+            Previous = previous;
+            Current = current;
+        }
+
+        public GameEnhancer Enhancer { get; }
+
+        public bool Previous { get; }
+
+        public bool Current { get; }
+    }
+
+    /// <summary>技能实例的获得状态实际变化。</summary>
+    public sealed class SkillObtainedChangedCallbackData : GameCallbackData
+    {
+        internal SkillObtainedChangedCallbackData(GameSkill skill, bool previous, bool current)
+        {
+            Skill = skill;
+            Previous = previous;
+            Current = current;
+        }
+
+        public GameSkill Skill { get; }
+
+        public bool Previous { get; }
+
+        public bool Current { get; }
+    }
+
+    /// <summary>技能实例的启用状态实际变化；派发时原版技能连接重算已经完成。</summary>
+    public sealed class SkillEnabledChangedCallbackData : GameCallbackData
+    {
+        internal SkillEnabledChangedCallbackData(GameSkill skill, bool previous, bool current)
+        {
+            Skill = skill;
+            Previous = previous;
+            Current = current;
+        }
+
+        public GameSkill Skill { get; }
+
+        public bool Previous { get; }
+
+        public bool Current { get; }
+    }
+
+    /// <summary>技能实例的某一个操作方式配置实际变化。</summary>
+    public sealed class SkillManipulationChangedCallbackData : GameCallbackData
+    {
+        internal SkillManipulationChangedCallbackData(GameSkill skill, int option, bool previous, bool current)
+        {
+            Skill = skill;
+            Option = option;
+            Previous = previous;
+            Current = current;
+        }
+
+        public GameSkill Skill { get; }
+
+        /// <summary>发生变化的操作方式序号，与 <see cref="GameSkill.IsManipulationEnabled"/> 的参数同一套编号。</summary>
+        public int Option { get; }
+
+        public bool Previous { get; }
+
+        public bool Current { get; }
+    }
+
     /// <summary>任务实例从追踪列表移除。</summary>
     public sealed class QuestRemovedCallbackData : GameCallbackData
     {
