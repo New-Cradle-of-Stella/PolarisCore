@@ -10,3 +10,5 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("PolarisDiagnostics")]
 [assembly: InternalsVisibleTo("PolarisSave")]
 [assembly: InternalsVisibleTo("PolarisEvent")]
+[assembly: InternalsVisibleTo("PolarisParticles")]
+[assembly: InternalsVisibleTo("PolarisAI")]
