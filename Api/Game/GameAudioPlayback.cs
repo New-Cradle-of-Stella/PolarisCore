@@ -1,4 +1,5 @@
 using System;
+using CriWare;
 using XX;
 
 namespace Polaris.API
@@ -40,6 +41,40 @@ namespace Polaris.API
 
         /// <summary>获取该播放实例的剩余播放毫秒数；无法确定时为 0。</summary>
         public long RemainingMilliseconds => Read(static p => p.rest_duration_milisecond, 0L);
+
+        /// <summary>
+        /// 为这一次播放覆写音量，1 表示按 cue 自己的设定播放。
+        ///
+        /// <see cref="BaseVolume"/> 是只读的类别音量（音效/语音/BGM 各一档乘主音量），改不了单次播放；
+        /// 单次覆写只能落到 CRI 播放器上，而且必须 <c>Update</c> 一次才会作用到已经在响的声音。
+        /// </summary>
+        public void SetVolume(float volume) => Control("SetVolume", p =>
+        {
+            CriAtomExPlayer exPlayer = p.getPlayerInstance();
+            if (exPlayer == null)
+            {
+                return;
+            }
+
+            exPlayer.SetVolume(Math.Max(0f, volume) * p.base_volume);
+            exPlayer.UpdateAll();
+        });
+
+        /// <summary>
+        /// 为这一次播放覆写音高。参数是倍率（1 表示原速），内部换算成 CRI 的音分：
+        /// 一个八度是 1200 音分，因此倍率 <c>r</c> 对应 <c>1200 * log2(r)</c>。
+        /// </summary>
+        public void SetPitch(float ratio) => Control("SetPitch", p =>
+        {
+            CriAtomExPlayer exPlayer = p.getPlayerInstance();
+            if (exPlayer == null || ratio <= 0f)
+            {
+                return;
+            }
+
+            exPlayer.SetPitch(1200f * (float)(Math.Log(ratio) / Math.Log(2d)));
+            exPlayer.UpdateAll();
+        });
 
         /// <summary>停止该音频播放实例。已经自然播完的实例上调用是安全的空操作。</summary>
         public void Stop() => Control("Stop", static p => p.Stop());

@@ -37,6 +37,10 @@
       <HintPath>$(AicManagedDir)\pixelliner.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="CriMw.CriWare.Runtime">
+      <HintPath>$(AicManagedDir)\CriMw.CriWare.Runtime.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>$(AicManagedDir)\Newtonsoft.Json.dll</HintPath>
       <Private>false</Private>
