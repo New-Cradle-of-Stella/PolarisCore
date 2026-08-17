@@ -200,6 +200,27 @@ namespace Polaris
                     }
                 }
 
+                /// <summary>
+                /// 本版本是否存在该地图，不切换、不产生任何副作用。
+                /// <see cref="ChangeMap"/> 对未知地图抛 <see cref="ArgumentException"/>，调用方需要先问一句时用这个。
+                /// </summary>
+                public static bool ResolveMap(string mapKey)
+                {
+                    if (string.IsNullOrEmpty(mapKey))
+                    {
+                        return false;
+                    }
+
+                    try
+                    {
+                        return SafeM2D()?.getMapObject()?.Get(mapKey) != null;
+                    }
+                    catch (Exception)
+                    {
+                        return false;
+                    }
+                }
+
                 /// <summary>判断当前是否处于夜晚状态。</summary>
                 public static bool IsNight() => Night(static n => n.isNight(), false);
 

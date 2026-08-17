@@ -159,6 +159,65 @@ namespace Polaris.API
             Act("SetFacing", t => t.setAim(aim, forceSprite));
         }
 
+        /// <summary>该角色在地图上的名字，也就是 <see cref="GameMap.FindCharacter"/> 用的键；取不到时为 <c>null</c>。</summary>
+        public string Key => Read(static t => t.key, null);
+
+        /// <summary>该角色当前是否处于指定姿态。</summary>
+        public bool PoseIs(string pose)
+            => !string.IsNullOrEmpty(pose) && Read(t => t.SpPoseIs(pose), false);
+
+        /// <summary>
+        /// 切换该角色的精灵姿态，返回是否执行成功。
+        /// 走游戏自己的 <c>SpSetPose</c>，不生成也不解析 MoveScript 文本。
+        /// </summary>
+        public bool SetPose(string pose)
+        {
+            if (string.IsNullOrEmpty(pose))
+            {
+                return false;
+            }
+
+            EnsureUsable();
+            Act("SetPose", t => t.SpSetPose(pose));
+            return true;
+        }
+
+        /// <summary>
+        /// 把该角色放到当前地图的具名锚点（标签点）上，返回是否成功；锚点不存在时返回 <c>false</c>。
+        /// 这是瞬时定位，不是寻路移动。
+        /// </summary>
+        public bool MoveToAnchor(string anchorKey)
+        {
+            if (string.IsNullOrEmpty(anchorKey))
+            {
+                return false;
+            }
+
+            EnsureUsable();
+
+            M2Attackable t = Native;
+            if (t == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                if (t.Mp?.getLabelPoint(anchorKey) == null)
+                {
+                    return false;
+                }
+
+                t.setToLabelPt(anchorKey);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                PolarisAPI.Errors.Report(ex, "GameCharacter.MoveToAnchor");
+                return false;
+            }
+        }
+
         /// <summary>恢复该角色的体力值。实际回了多少由游戏的上限与溢出规则决定。</summary>
         public void HealHp(int amount)
         {

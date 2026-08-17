@@ -173,6 +173,83 @@ namespace Polaris.API
             return mover is nel.NelEnemy enemy ? GameEnemy.Wrap(enemy) : null;
         }
 
+        /// <summary>该地图是否有这个名字的锚点（标签点）。查不到是正常分支，不写游戏日志。</summary>
+        public bool HasAnchor(string anchorKey)
+            => !string.IsNullOrEmpty(anchorKey) && Read(m => m.getLabelPoint(anchorKey) != null, false);
+
+        /// <summary>整张地图重载贴图与网格，返回是否执行成功。用于事件里的"刷新当前地图"。</summary>
+        public bool Refresh() => Act("Refresh", static m => m.reloadWholePxls());
+
+        /// <summary>该地图是否存在这个名字的图层。</summary>
+        public bool HasLayer(string layerKey)
+            => !string.IsNullOrEmpty(layerKey) && Read(m => m.getLayer(layerKey) != null, false);
+
+        /// <summary>重新打开（加载）指定图层，返回是否成功；图层不存在时返回 <c>false</c> 而不抛异常。</summary>
+        public bool LoadLayer(string layerKey)
+        {
+            if (string.IsNullOrEmpty(layerKey))
+            {
+                return false;
+            }
+
+            return Act("LoadLayer", m =>
+            {
+                M2MapLayer layer = m.getLayer(layerKey);
+                if (layer == null)
+                {
+                    return false;
+                }
+
+                layer.reopen();
+                return true;
+            });
+        }
+
+        /// <summary>
+        /// 开关一个具名地图元素，返回是否找到并切换成功。
+        /// <paramref name="kind"/> 目前只支持 <c>"lp"</c>（标签点）——静态地图 chip 是网格数据，没有启用开关。
+        /// </summary>
+        public bool SetElementActive(string kind, string elementKey, bool active)
+        {
+            if (!string.Equals(kind, "lp", StringComparison.Ordinal) || string.IsNullOrEmpty(elementKey))
+            {
+                return false;
+            }
+
+            return Act("SetElementActive", m =>
+            {
+                M2LabelPoint point = m.getLabelPoint(elementKey);
+                if (point == null)
+                {
+                    return false;
+                }
+
+                if (active)
+                {
+                    point.activate();
+                }
+                else
+                {
+                    point.deactivate();
+                }
+
+                return true;
+            });
+        }
+
+        /// <summary>开关地图的黑暗区域状态，返回是否执行成功。读取见 <see cref="IsDark"/>。</summary>
+        public bool SetDark(bool enabled) => Act("SetDark", _ =>
+        {
+            M2DBase m2d = M2DBase.Instance;
+            if (m2d == null)
+            {
+                return false;
+            }
+
+            m2d.map_dark_area = enabled;
+            return true;
+        });
+
         M2Mover FindMover(string key)
         {
             Map2d m = Native;
@@ -201,6 +278,26 @@ namespace Polaris.API
             catch (Exception)
             {
                 return null;
+            }
+        }
+
+        /// <summary>地图写操作的统一包装：地图缺席或调用抛异常时返回 <c>false</c>，不把异常漏给调用方。</summary>
+        bool Act(string what, Func<Map2d, bool> act)
+        {
+            Map2d m = Native;
+            if (m == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                return act(m);
+            }
+            catch (Exception ex)
+            {
+                PolarisAPI.Errors.Report(ex, $"GameMap.{what}");
+                return false;
             }
         }
 
