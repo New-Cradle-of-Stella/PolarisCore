@@ -25,5 +25,12 @@ namespace Polaris.Infra
             => Plugins.Select(p => p.Instance?.GetType().Assembly)
                       .Where(a => a != null)
                       .Distinct();
+
+        /// <summary>
+        /// Polaris 组件程序集（含 Core 自身）。组件不带 <c>BepInPlugin</c>，由组件宿主自己发现并加载，
+        /// 因此它们不在 <see cref="PluginAssemblies"/> 里——想同时覆盖插件与组件的扫描要用
+        /// <see cref="TypesAPI.InModules"/>。
+        /// </summary>
+        public IEnumerable<Assembly> ComponentAssemblies => Components.ComponentHost.Assemblies;
     }
 }

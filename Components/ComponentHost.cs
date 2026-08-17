@@ -70,8 +70,18 @@ namespace Polaris.Components
             {
                 foreach (Type type in SafeTypes(assembly))
                 {
-                    if (type.IsAbstract || !typeof(PolarisComponent).IsAssignableFrom(type))
+                    try
                     {
+                        // IsAssignableFrom 要解析 type 的字段类型：依赖 DLL 缺失时抛 TypeLoadException。
+                        // 必须逐类型隔离——一个坏类型掀掉整轮发现的话，所有组件（含 UI）都不会加载。
+                        if (type.IsAbstract || !typeof(PolarisComponent).IsAssignableFrom(type))
+                        {
+                            continue;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Plugin.Logger.LogWarning($"[PolarisCore] Skipped unloadable type {type.FullName} in {assembly.GetName().Name}: {ex.Message}");
                         continue;
                     }
 
@@ -148,7 +158,14 @@ namespace Polaris.Components
         {
             foreach (PolarisComponent component in components)
             {
-                MethodInfo method = component.GetType().GetMethod(methodName);
+                // 必须按签名取无参实例重载：组件可以另有同名的静态便捷入口
+                // （如 PolarisEventComponent.Start(string)），只按名字取会抛 AmbiguousMatchException。
+                MethodInfo method = component.GetType().GetMethod(
+                    methodName,
+                    BindingFlags.Public | BindingFlags.Instance,
+                    binder: null,
+                    types: Type.EmptyTypes,
+                    modifiers: null);
                 if (method?.DeclaringType != typeof(PolarisComponent))
                 {
                     destination.Add(component);

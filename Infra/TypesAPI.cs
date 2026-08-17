@@ -60,6 +60,23 @@ namespace Polaris.Infra
             }
         }
 
+        /// <summary>
+        /// 插件与 Polaris 组件两边的全部类型（去重）。凡是"Polaris 自己的模块也该被扫到"的场景都用这个：
+        /// 组件不带 <c>BepInPlugin</c>，只看 <see cref="InPlugins"/> 会把它们整个漏掉。
+        /// </summary>
+        public IEnumerable<Type> InModules()
+        {
+            foreach (Assembly assembly in PolarisAPI.Modules.PluginAssemblies
+                         .Concat(PolarisAPI.Modules.ComponentAssemblies)
+                         .Distinct())
+            {
+                foreach (Type type in Of(assembly))
+                {
+                    yield return type;
+                }
+            }
+        }
+
         /// <summary>整个 AppDomain 里的全部类型，含游戏本体程序集。慢，除非确有必要否则用 <see cref="InPlugins"/>。</summary>
         public IEnumerable<Type> InAppDomain()
         {
@@ -75,6 +92,10 @@ namespace Polaris.Infra
         /// <summary>插件程序集里标了 <typeparamref name="TAttr"/> 的类型，连同该特性实例一起给出。</summary>
         public IEnumerable<(Type Type, TAttr Attribute)> InPluginsWith<TAttr>() where TAttr : Attribute
             => WithAttribute<TAttr>(InPlugins());
+
+        /// <summary>插件与 Polaris 组件里标了 <typeparamref name="TAttr"/> 的类型，连同该特性实例一起给出。</summary>
+        public IEnumerable<(Type Type, TAttr Attribute)> InModulesWith<TAttr>() where TAttr : Attribute
+            => WithAttribute<TAttr>(InModules());
 
         /// <summary>整个 AppDomain 里标了 <typeparamref name="TAttr"/> 的类型。</summary>
         public IEnumerable<(Type Type, TAttr Attribute)> InAppDomainWith<TAttr>() where TAttr : Attribute

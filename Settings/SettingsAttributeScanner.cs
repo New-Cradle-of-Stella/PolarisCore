@@ -7,8 +7,9 @@ using BepInEx.Unity.Mono.Bootstrap;
 namespace Polaris.Settings
 {
     /// <summary>
-    /// 扫描已加载插件程序集里标了 <see cref="PolarisSettingGroupAttribute"/> 的类，把 <see cref="PolarisSettingAttribute"/> 字段注册成设置项。
-    /// 只看 BepInEx 真正加载的插件程序集（<see cref="Infra.TypesAPI.InPluginsWith{TAttr}"/>），避免遍历整个 AppDomain。
+    /// 扫描已加载模组里标了 <see cref="PolarisSettingGroupAttribute"/> 的类，把 <see cref="PolarisSettingAttribute"/> 字段注册成设置项。
+    /// 作用域是插件加 Polaris 组件（<see cref="Infra.TypesAPI.InModulesWith{TAttr}"/>），避免遍历整个 AppDomain；
+    /// 组件必须包含在内——它们不带 <c>BepInPlugin</c>，只看插件程序集会让 Polaris 自己的模块一个设置项都注册不上。
     /// </summary>
     internal static class SettingsAttributeScanner
     {
@@ -26,7 +27,7 @@ namespace Polaris.Settings
 
             int typeCount = 0;
             foreach ((Type type, PolarisSettingGroupAttribute groupAttr)
-                     in PolarisAPI.Types.InPluginsWith<PolarisSettingGroupAttribute>())
+                     in PolarisAPI.Types.InModulesWith<PolarisSettingGroupAttribute>())
             {
                 if (ScanType(type, groupAttr))
                 {
