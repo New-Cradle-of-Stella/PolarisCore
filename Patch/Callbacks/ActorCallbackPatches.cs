@@ -38,6 +38,22 @@ namespace Polaris.Patch
         }
     }
 
+    /// <summary>玩家覆写了 MP 伤害入口，需单独补上；基类补丁不会覆盖这个虚方法入口。</summary>
+    [HarmonyPatch(typeof(PR), nameof(PR.applyMpDamage), new[] { typeof(int), typeof(bool), typeof(AttackInfo) })]
+    internal static class Patch_PR_applyMpDamage_Callbacks
+    {
+        [HarmonyPostfix]
+        static void Postfix(PR __instance, int __result)
+        {
+            if (__result == 0)
+            {
+                return;
+            }
+
+            GameCallbackPublishers.MpDamage(__instance, __result, __instance.mp);
+        }
+    }
+
     /// <summary>唯一真正改 <c>hp</c> 字段的地方，打这一处即可覆盖 PR 和 NelEnemy 两边。</summary>
     [HarmonyPatch(typeof(M2Attackable), nameof(M2Attackable.cureHp), new[] { typeof(int) })]
     internal static class Patch_M2Attackable_cureHp_Callbacks

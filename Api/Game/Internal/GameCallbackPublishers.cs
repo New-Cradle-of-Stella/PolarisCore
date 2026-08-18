@@ -247,8 +247,6 @@ namespace Polaris.API
 
             GameCallbackHub.PublishInstance(
                 GameInstanceCallbackKind.GameMenuClosed, menu, () => new GameMenuClosedCallbackData(menu));
-
-            GameMenu.Invalidate(native);
         }
     }
 }

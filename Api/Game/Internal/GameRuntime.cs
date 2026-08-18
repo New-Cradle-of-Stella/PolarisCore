@@ -130,8 +130,9 @@ namespace Polaris.API
                 if (closed != null)
                 {
                     GameCallbackHub.PublishInstance(
+                        GameInstanceCallbackKind.MapActionClosed, closed, () => new MapActionClosedCallbackData(closed));
+                    GameCallbackHub.PublishInstance(
                         GameInstanceCallbackKind.MapClosed, closed, () => new MapClosedCallbackData(closed));
-                    GameMap.Invalidate(previous);
                 }
             }
 
@@ -145,11 +146,11 @@ namespace Polaris.API
                 GameCallbackHub.PublishStatic(
                     GameStaticCallbackKind.MapOpened, () => new MapOpenedCallbackData(opened));
 
-                // 地图动作逻辑在切图完成同帧就绪,以此帧作为其就绪的通知点。
-                GameCallbackHub.PublishInstance(
+                // 先让 MapOpened 订阅者拿到实例并注册实例回调，再发布动作初始化。
+                Infra.CallbackRuntime.Enqueue(() => GameCallbackHub.PublishInstance(
                     GameInstanceCallbackKind.MapActionInitialized,
                     opened,
-                    () => new MapActionInitializedCallbackData(opened));
+                    () => new MapActionInitializedCallbackData(opened)));
             }
         }
 

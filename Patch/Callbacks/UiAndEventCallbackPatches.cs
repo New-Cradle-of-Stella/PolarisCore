@@ -21,36 +21,18 @@ namespace Polaris.Patch
         static void Postfix(UiGameMenu __instance) => GameCallbackPublishers.GameMenuClosed(__instance);
     }
 
-    /// <summary>事件压栈的唯一入口；引擎未暴露稳定的"当前栈顶事件"成员，故靠这三个补丁记账。</summary>
-    [HarmonyPatch(typeof(EV), nameof(EV.stack))]
-    internal static class Patch_EV_stack_Callbacks
+    /// <summary>事件真正成为当前栈顶时记账；仅入栈但尚未启动的事件不提前发布。</summary>
+    [HarmonyPatch(typeof(EV), nameof(EV.evStart))]
+    internal static class Patch_EV_evStart_Callbacks
     {
         [HarmonyPostfix]
-        static void Postfix(string _name, object __result)
+        static void Postfix()
         {
-            if (__result != null)
+            string key = EV.curEv?.name;
+            if (!string.IsNullOrEmpty(key))
             {
-                GameEventRuntime.OnOpened(_name);
+                GameEventRuntime.OnOpened(key);
             }
-        }
-    }
-
-    /// <summary>事件切换：旧的这一层结束，新的顶上来。</summary>
-    [HarmonyPatch(typeof(EV), nameof(EV.changeEvent), new[] { typeof(string), typeof(int), typeof(string[]) })]
-    internal static class Patch_EV_changeEvent_Callbacks
-    {
-        [HarmonyPostfix]
-        static void Postfix(string _event, bool __result)
-        {
-            if (!__result)
-            {
-                return;
-            }
-
-            // 切换等于"上一层正常演完了，换这一层"，因此先关后开，顺序不能反：
-            // 反过来的话新事件会被紧跟着的关闭事件当成已经结束。
-            GameEventRuntime.OnClosed(true);
-            GameEventRuntime.OnOpened(_event);
         }
     }
 

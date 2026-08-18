@@ -21,20 +21,28 @@ namespace Polaris.Patch
         }
     }
 
-    /// <summary><c>Reduce</c> 全扣或整体失败、无部分扣除，<c>__result == true</c> 时直接用请求的 <c>count</c> 当变化量。</summary>
+    /// <summary>
+    /// 不看 <c>__result</c>，改用前后 <c>getCount</c> 的差值当变化量：这样部分扣除、或游戏内部改走别的扣减路径时，
+    /// 报出去的数量都还是真实少掉的那些。
+    /// </summary>
     [HarmonyPatch(typeof(ItemStorage), nameof(ItemStorage.Reduce),
         new[] { typeof(NelItem), typeof(int), typeof(int), typeof(bool) })]
     internal static class Patch_ItemStorage_Reduce_Callbacks
     {
+        [HarmonyPrefix]
+        static void Prefix(ItemStorage __instance, NelItem Itm, int grade, out int __state)
+            => __state = __instance.getCount(Itm, grade);
+
         [HarmonyPostfix]
-        static void Postfix(ItemStorage __instance, NelItem Itm, int count, int grade, bool __result)
+        static void Postfix(ItemStorage __instance, NelItem Itm, int grade, int __state)
         {
-            if (!__result || count == 0)
+            int removed = __state - __instance.getCount(Itm, grade);
+            if (removed <= 0)
             {
                 return;
             }
 
-            GameCallbackPublishers.ItemRemoved(__instance, Itm, count, grade);
+            GameCallbackPublishers.ItemRemoved(__instance, Itm, removed, grade);
         }
     }
 

@@ -8,7 +8,7 @@ namespace Polaris.API
     /// 玩家、敌人的独有状态机分别在 <see cref="GamePlayer"/>、<see cref="GameEnemy"/>。
     /// 角色对象是对象池复用的，不要缓存原生对象；包装器会随地图切换整批失效。
     /// </summary>
-    public class GameCharacter : GameInstance
+    public class GameCharacter : GameInstance, Drawing.IMapDrawTarget
     {
         static readonly InstanceTable<M2Attackable, GameCharacter> Table = new();
 
@@ -322,6 +322,26 @@ namespace Polaris.API
                 PolarisAPI.Errors.Report(ex, "GameCharacter.DamageMp");
                 return 0;
             }
+        }
+
+        // ── Drawing 跟随协议 ────────────────────────────
+
+        /// <summary>
+        /// <see cref="Drawing.IMapDrawTarget"/> 的实现：让地图 Drawing Surface 跟着这个角色跑。
+        /// 显式实现，不进入 <see cref="GameCharacter"/> 自己的公共表面；包装器已失效时返回 <c>false</c>，
+        /// 由跟随方按 <see cref="Drawing.MapTargetLostBehavior"/> 决定怎么处理。
+        /// </summary>
+        bool Drawing.IMapDrawTarget.TryGetMapPosition(out Drawing.DrawPoint position)
+        {
+            M2Attackable native = Native;
+            if (native == null)
+            {
+                position = default;
+                return false;
+            }
+
+            position = new Drawing.DrawPoint(native.x, native.y);
+            return true;
         }
 
         // ── 内部工具 ──────────────────

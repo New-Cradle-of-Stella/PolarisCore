@@ -159,7 +159,11 @@ namespace Polaris
                 /// <summary>取得当前玩家实例；玩家不在场时为 <c>null</c>。查询/操作见 <see cref="API.GamePlayer"/>。</summary>
                 public static GamePlayer CurrentPlayer => GamePlayer.Wrap(GameBinding.Player);
 
-                /// <summary>切换到指定地图并返回新地图实例（高权限操作，触发事件/淡入淡出/存档时机）；本版本没有该地图时抛 <see cref="ArgumentException"/>。</summary>
+                /// <summary>
+                /// 直接换图无法保留玩家实例，因此该入口已禁用。
+                /// 地图不存在时抛 <see cref="ArgumentException"/>；地图存在时抛 <see cref="NotSupportedException"/>。
+                /// </summary>
+                [Obsolete("Direct map replacement cannot preserve the player. Use the game's normal transfer flow instead.")]
                 public static GameMap ChangeMap(string mapKey)
                 {
                     if (string.IsNullOrEmpty(mapKey))
@@ -189,15 +193,9 @@ namespace Polaris
                         throw new ArgumentException($"No such map in this game version: {mapKey}.", nameof(mapKey));
                     }
 
-                    try
-                    {
-                        return GameMap.Wrap(m2d.changeMap(target) ?? target);
-                    }
-                    catch (Exception ex)
-                    {
-                        Errors.Report(ex, "Game.World.ChangeMap");
-                        throw new InvalidOperationException($"The game refused to change to the map: {mapKey}.", ex);
-                    }
+                    throw new NotSupportedException(
+                        "Direct map replacement is disabled because it detaches the player. " +
+                        "Use the game's normal map-transfer event with an explicit destination entry.");
                 }
 
                 /// <summary>
@@ -228,9 +226,32 @@ namespace Polaris
                 public static bool HasWeather(GameWeather weather)
                     => Night(n => n.hasWeather((WeatherItem.WEATHER)(uint)weather), false);
 
-                /// <summary>强制设置指定天气，返回是否设置成功；走游戏的"临时天气"通道，直接改写基础天气会在下次日夜推进时被抹掉。</summary>
+                /// <summary>
+                /// 强制设置指定天气，返回是否设置成功；走游戏的"临时天气"通道，直接改写基础天气会在下次日夜推进时被抹掉。
+                /// 非本版本枚举里的值直接返回 <c>false</c>，不碰游戏状态；<see cref="GameWeather.Normal"/> 表示"没有天气"，
+                /// 因此撤掉临时天气再清一次当前天气，而不是写掩码。其余天气写的是 <c>1 &lt;&lt; 枚举值</c> 的位掩码
+                /// （与 <c>WeatherChangedCallbackData.Has</c> 同一套约定），写完回读一次确认真的生效。
+                /// </summary>
                 public static bool SetWeather(GameWeather weather)
-                    => NightAct("SetWeather", n => n.initTemporaryWeather(TemporaryWeatherFlagKey, (int)weather));
+                {
+                    if (!Enum.IsDefined(typeof(GameWeather), weather))
+                    {
+                        return false;
+                    }
+
+                    if (weather == GameWeather.Normal)
+                    {
+                        return NightAct("SetWeather", n =>
+                        {
+                            n.initTemporaryWeather(TemporaryWeatherFlagKey, -1);
+                            n.clearWeather();
+                        });
+                    }
+
+                    int weatherMask = 1 << (int)weather;
+                    return NightAct("SetWeather", n => n.initTemporaryWeather(TemporaryWeatherFlagKey, weatherMask))
+                        && HasWeather(weather);
+                }
 
                 /// <summary>获取当前危险等级：算敌人强度用的 0–10 浮点尺度，非玩家状态页显示值（那个用 <see cref="GetDangerMeter"/>）。</summary>
                 public static float DangerLevel => Night(static n => n.getDangerLevel(), 0f);
@@ -457,8 +478,10 @@ namespace Polaris
 
                     try
                     {
-                        evt.EV.stack(eventKey, 0, -1, null, null);
-                        evt.EV.evStart();
+                        if (evt.EV.stack(eventKey, 0, -1, null, null) == null)
+                        {
+                            throw new InvalidOperationException("The event was not added to the event stack.");
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -479,7 +502,21 @@ namespace Polaris
 
                     try
                     {
-                        evt.EV.changeEvent(eventKey, 0, null);
+                        bool hadActiveEvent = evt.EV.isActive(true);
+                        if (evt.EV.stack(eventKey, 0, 0, null, null) == null)
+                        {
+                            throw new InvalidOperationException("The event was not added to the event stack.");
+                        }
+
+                        if (hadActiveEvent)
+                        {
+                            if (!evt.EV.evEnd(false))
+                            {
+                                throw new InvalidOperationException("The current event refused to close.");
+                            }
+
+                            evt.EV.evStart();
+                        }
                     }
                     catch (Exception ex)
                     {

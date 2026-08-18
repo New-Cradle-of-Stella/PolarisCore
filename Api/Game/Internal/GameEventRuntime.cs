@@ -62,8 +62,6 @@ namespace Polaris.API
 
             GameCallbackHub.PublishInstance(
                 GameInstanceCallbackKind.EventClosed, closed, () => new EventClosedCallbackData(closed, completed));
-
-            closed.Invalidate();
         }
 
         /// <summary>世界卸载时清账。</summary>

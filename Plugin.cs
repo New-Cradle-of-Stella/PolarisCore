@@ -105,6 +105,7 @@ namespace Polaris
             Diagnostics.DiagnosticsHost.Beat(UnityEngine.Time.frameCount);
 
             API.GameSessionRuntime.Pump();
+            Drawing.Internal.DrawingRuntime.Update();
             PolarisAPI.GameMenu.Pump();
             ComponentHost.Update();
         }
@@ -134,6 +135,7 @@ namespace Polaris
         {
             // 只清零本地标志，不主动恢复世界：进程都要退出了没必要。
             API.GameMenuPauseRuntime.Reset();
+            Drawing.Internal.DrawingRuntime.Shutdown();
 
             ComponentHost.Shutdown();
 

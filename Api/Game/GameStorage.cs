@@ -147,12 +147,14 @@ namespace Polaris.API
 
             try
             {
-                if (s.getCount(native, grade) < count)
+                int before = s.getCount(native, grade);
+                if (before < count)
                 {
                     return false;
                 }
 
-                return s.Reduce(native, count, grade, true);
+                s.Reduce(native, count, grade, true);
+                return s.getCount(native, grade) == before - count;
             }
             catch (Exception ex)
             {
