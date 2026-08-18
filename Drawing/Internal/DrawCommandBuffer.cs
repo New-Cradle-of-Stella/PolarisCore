@@ -14,6 +14,9 @@ namespace Polaris.Drawing.Internal
         Line,
         Polyline,
         FillPolygon,
+        PathFill,
+        PathStroke,
+        Image,
     }
 
     internal enum DrawOpKind
@@ -50,6 +53,13 @@ namespace Polaris.Drawing.Internal
         internal IReadOnlyList<DrawPoint> Points;
         internal uint ColorArgb;
         internal float Thickness;
+
+        // PathFill/PathStroke：命令快照。
+        internal DrawPathCommand[] PathCommands;
+
+        // Image：目标矩形复用 Rect，色调复用 ColorArgb；SourceRect 为空表示用整张贴图。
+        internal DrawImage Image;
+        internal DrawRect? SourceRect;
 
         // Text：位置同样存在 PointA 里。
         internal string Text;
@@ -183,16 +193,64 @@ namespace Polaris.Drawing.Internal
         public override void DrawPath(DrawPath path, DrawPathStyle style)
         {
             EnsureUsable();
-            throw new NotSupportedException(
-                "DrawContext.DrawPath is reserved for a later phase (adaptive curve tessellation and holed outlines " +
-                "have not gone through phase-0 dynamic validation yet).");
+            if (path == null)
+            {
+                throw new ArgumentNullException(nameof(path));
+            }
+            if (style == null)
+            {
+                throw new ArgumentNullException(nameof(style));
+            }
+            if (!style.Fill.HasValue && !style.Stroke.HasValue)
+            {
+                return;
+            }
+
+            IReadOnlyList<DrawPathCommand> commands = path.Commands;
+            var snapshot = new DrawPathCommand[commands.Count];
+            for (int i = 0; i < snapshot.Length; i++)
+            {
+                snapshot[i] = commands[i];
+            }
+
+            if (style.Fill.HasValue)
+            {
+                AddShape(new DrawOp
+                {
+                    Shape = ShapeKind.PathFill,
+                    PathCommands = snapshot,
+                    ColorArgb = style.Fill.Value.ColorArgb,
+                });
+            }
+
+            if (style.Stroke.HasValue)
+            {
+                AddShape(new DrawOp
+                {
+                    Shape = ShapeKind.PathStroke,
+                    PathCommands = snapshot,
+                    ColorArgb = style.Stroke.Value.ColorArgb,
+                    Thickness = style.Stroke.Value.Thickness,
+                });
+            }
         }
 
         public override void DrawImage(DrawImage image, DrawRect destination, DrawImageStyle style = null)
         {
             EnsureUsable();
-            throw new NotSupportedException(
-                "DrawContext.DrawImage is not backed by a renderer yet (image drawing has not gone through phase-0 dynamic validation).");
+            if (image == null)
+            {
+                throw new ArgumentNullException(nameof(image));
+            }
+
+            AddShape(new DrawOp
+            {
+                Shape = ShapeKind.Image,
+                Rect = destination,
+                Image = image,
+                SourceRect = style?.SourcePixelRect,
+                ColorArgb = style?.TintArgb ?? 0xFFFFFFFFu,
+            });
         }
 
         public override void DrawText(string text, DrawPoint position, TextStyle style)
@@ -258,20 +316,6 @@ namespace Polaris.Drawing.Internal
 
             opacityDepth--;
             ops.Add(new DrawOp { Kind = DrawOpKind.PopOpacity });
-        }
-
-        public override void PushClipRect(DrawRect rect)
-        {
-            EnsureUsable();
-            throw new NotSupportedException(
-                "DrawContext.PushClipRect is reserved for a later phase (CPU clip rects have not gone through phase-0 dynamic validation yet).");
-        }
-
-        public override void PopClip()
-        {
-            EnsureUsable();
-            throw new NotSupportedException(
-                "DrawContext.PopClip is reserved for a later phase (CPU clip rects have not gone through phase-0 dynamic validation yet).");
         }
 
         /// <summary>补上 <see cref="DrawOpKind.Shape"/> 再入列，调用点只填自己这一种形状真正用到的字段。</summary>

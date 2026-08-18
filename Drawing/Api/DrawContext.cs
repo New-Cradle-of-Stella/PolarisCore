@@ -26,10 +26,13 @@ namespace Polaris.Drawing
 
         public abstract void FillPolygon(IReadOnlyList<DrawPoint> points, DrawPaint paint);
 
-        /// <summary>阶段 3 功能，当前未接入后端；调用会抛 <see cref="System.NotSupportedException"/>。</summary>
+        /// <summary>
+        /// 填充/描边一条任意路径（直线+贝塞尔曲线，支持多子路径带孔）。曲线自适应细分；
+        /// 填充按嵌套包含关系区分外轮廓/洞，见 <see cref="Internal.PathGeometry"/>。
+        /// </summary>
         public abstract void DrawPath(DrawPath path, DrawPathStyle style);
 
-        /// <summary>图片绘制尚未接入后端（未经过阶段 0 动态验证）；调用会抛 <see cref="System.NotSupportedException"/>。</summary>
+        /// <summary>把一张贴图绘制到 <paramref name="destination"/>；<paramref name="style"/> 为空时用整张贴图、不上色。</summary>
         public abstract void DrawImage(DrawImage image, DrawRect destination, DrawImageStyle style = null);
 
         /// <summary><paramref name="text"/> 必须是已求值的字面量文本，不接受本地化 key。</summary>
@@ -42,10 +45,5 @@ namespace Polaris.Drawing
         public abstract void PushOpacity(float opacity);
 
         public abstract void PopOpacity();
-
-        /// <summary>阶段 3 功能，当前未接入后端；调用会抛 <see cref="System.NotSupportedException"/>。</summary>
-        public abstract void PushClipRect(DrawRect rect);
-
-        public abstract void PopClip();
     }
 }

@@ -11,6 +11,8 @@ namespace Polaris.Drawing.Internal
     /// 节点的位置/旋转/缩放/深度都是那个子 GameObject 的 Unity Transform，不重新三角化；
     /// 不透明度通过重新推送已烘焙好的顶点颜色数组实现，同样不重新三角化。
     /// 文本命令是各自独立、可见的 <c>TextRenderer</c> 子物体，直接摆放，不经过网格复制。
+    /// 图片命令也各自拥有一个 <c>MeshDrawer</c>（贴图不同不能共享材质），四个角在烘焙时就已经乘过
+    /// PushTransform 折出来的矩阵，运行时只需要像形状一样挪子物体的 Unity Transform。
     /// </summary>
     internal sealed class ScreenDrawingBackend : IDrawingBackend
     {
@@ -25,6 +27,15 @@ namespace Polaris.Drawing.Internal
             internal float BakedOpacity;
         }
 
+        sealed class ImageSlotState
+        {
+            internal GameObject Gob;
+            internal MeshDrawer Drawer;
+            internal Material Material;
+            internal Texture2D LastTexture;
+            internal Color32[] BaseColors = new Color32[4];
+        }
+
         sealed class NodeState
         {
             internal MeshDrawer ShapeDrawer;
@@ -32,6 +43,7 @@ namespace Polaris.Drawing.Internal
             internal Color32[] BaseColors = Array.Empty<Color32>();
             internal bool HasShapeContent;
             internal readonly List<TextSlotState> Texts = new();
+            internal readonly List<ImageSlotState> Images = new();
             internal DrawTransform Transform = DrawTransform.Identity;
             internal float Opacity = 1f;
             internal bool Visible = true;
@@ -103,7 +115,7 @@ namespace Polaris.Drawing.Internal
                 state.ShapeDrawer.clear();
             }
 
-            List<BakedTextOp> texts = GeometryCache.Bake(state.ShapeDrawer, ops);
+            (List<BakedTextOp> texts, List<BakedImageOp> images) = GeometryCache.Bake(state.ShapeDrawer, ops);
             state.ShapeDrawer.updateForMeshRenderer();
             state.HasShapeContent = state.ShapeDrawer.exist_content;
 
@@ -112,6 +124,7 @@ namespace Polaris.Drawing.Internal
             Array.Copy(state.ShapeDrawer.getColorArray(), state.BaseColors, vertexMax);
 
             ReconcileTexts(state, texts, nodeId);
+            ReconcileImages(state, images, nodeId);
             ApplyVisualState(state);
         }
 
@@ -132,6 +145,7 @@ namespace Polaris.Drawing.Internal
             if (built)
             {
                 RecolorShape(state);
+                RecolorImages(state);
                 ApplyTextOpacity(state);
             }
         }
@@ -166,6 +180,10 @@ namespace Polaris.Drawing.Internal
             {
                 text.Entry.Dispose();
             }
+            foreach (ImageSlotState image in state.Images)
+            {
+                DestroyImageSlot(image);
+            }
             nodes.Remove(nodeId);
         }
 
@@ -176,10 +194,10 @@ namespace Polaris.Drawing.Internal
                 return;
             }
 
-            DrawBatchBuilder.Order(nodeIdsInOrder, nodeOrderOf, nodeVisibleOf, visibleInDrawOrder);
-
             // host 自己的 Transform 已经携带了 Plane/SurfaceOrder 的那部分 Z（见 EnsureReady），
             // 这里只需要在节点之间分配一点相对偏移，否则会把 host 的基准 Z 重复叠加一遍。
+            DrawBatchBuilder.Order(nodeIdsInOrder, nodeOrderOf, nodeVisibleOf, visibleInDrawOrder);
+
             for (int i = 0; i < visibleInDrawOrder.Count; i++)
             {
                 NodeState state = nodes[visibleInDrawOrder[i]];
@@ -193,19 +211,6 @@ namespace Polaris.Drawing.Internal
             // Screen 节点全部是事件驱动（属性 setter 直接生效），不需要每帧轮询。
         }
 
-        public DrawRect ComputeBounds(IReadOnlyList<int> nodeIds)
-        {
-            var bounds = new DrawBoundsBuilder();
-            foreach (int id in nodeIds)
-            {
-                if (nodes.TryGetValue(id, out NodeState state))
-                {
-                    bounds.Include(state.ShapeDrawer, state.Transform);
-                }
-            }
-            return bounds.ToRect();
-        }
-
         public DrawingDebugStats.BackendStats GetStats()
         {
             int vertices = 0, triangles = 0, textCount = 0;
@@ -215,6 +220,11 @@ namespace Polaris.Drawing.Internal
                 {
                     vertices += state.ShapeDrawer.getVertexMax();
                     triangles += state.ShapeDrawer.getTriMax() / 3;
+                }
+                foreach (ImageSlotState image in state.Images)
+                {
+                    vertices += image.Drawer.getVertexMax();
+                    triangles += image.Drawer.getTriMax() / 3;
                 }
                 textCount += state.Texts.Count;
             }
@@ -233,6 +243,10 @@ namespace Polaris.Drawing.Internal
                 foreach (TextSlotState text in state.Texts)
                 {
                     text.Entry.Dispose();
+                }
+                foreach (ImageSlotState image in state.Images)
+                {
+                    DestroyImageSlot(image);
                 }
             }
             nodes.Clear();
@@ -316,6 +330,110 @@ namespace Polaris.Drawing.Internal
             }
         }
 
+        void ReconcileImages(NodeState state, List<BakedImageOp> images, int nodeId)
+        {
+            while (state.Images.Count > images.Count)
+            {
+                int last = state.Images.Count - 1;
+                DestroyImageSlot(state.Images[last]);
+                state.Images.RemoveAt(last);
+            }
+
+            for (int i = 0; i < images.Count; i++)
+            {
+                if (i >= state.Images.Count)
+                {
+                    state.Images.Add(new ImageSlotState());
+                }
+
+                AuthorImageQuad(state.Images[i], images[i], $"Polaris.Drawing.Screen.{debugName}.Node{nodeId}.Image{i}");
+            }
+        }
+
+        void AuthorImageQuad(ImageSlotState slot, BakedImageOp baked, string slotDebugName)
+        {
+            Texture2D texture = baked.Image.Texture;
+            if (slot.Drawer == null)
+            {
+                slot.Material = BuildImageMaterial(texture);
+                slot.Drawer = meshes.Make(slot.Material);
+                slot.Gob = meshes.GetGob(slot.Drawer);
+                slot.Gob.name = slotDebugName;
+                slot.LastTexture = texture;
+            }
+            else if (slot.LastTexture != texture)
+            {
+                slot.Drawer.clear();
+                UnityEngine.Object.Destroy(slot.Material);
+                slot.Material = BuildImageMaterial(texture);
+                slot.Drawer.setMaterial(slot.Material, cloned: true);
+                slot.LastTexture = texture;
+            }
+            else
+            {
+                slot.Drawer.clear();
+            }
+
+            AuthorImageQuadGeometry(slot.Drawer, baked, texture);
+            slot.Drawer.updateForMeshRenderer();
+
+            int vertexMax = slot.Drawer.getVertexMax();
+            slot.BaseColors = new Color32[vertexMax];
+            Array.Copy(slot.Drawer.getColorArray(), slot.BaseColors, vertexMax);
+        }
+
+        static Material BuildImageMaterial(Texture2D texture)
+        {
+            Material material = MTRX.newMtr(MTRX.getMtr(BLEND.NORMAL));
+            material.SetTexture("_MainTex", texture);
+            return material;
+        }
+
+        static void AuthorImageQuadGeometry(MeshDrawer drawer, BakedImageOp baked, Texture2D texture)
+        {
+            // TintArgb 已经是这条命令自己的颜色；baked.Opacity 是录制时 PushOpacity 栈折出来的值，
+            // 两者都要烤进顶点颜色——节点运行期的 Opacity 是另一层，由 RecolorImages 在这之上再乘一次。
+            Color32 baseColor = C32.d2c(baked.TintArgb);
+            baseColor.a = (byte)(Mathf.Clamp01(baked.Opacity) * baseColor.a);
+            drawer.Col = baseColor;
+
+            DrawRect rect = baked.Destination;
+            Vector3 p0 = baked.LocalMatrix.MultiplyPoint3x4(new Vector3(rect.Left, rect.Bottom, 0f));
+            Vector3 p1 = baked.LocalMatrix.MultiplyPoint3x4(new Vector3(rect.Left, rect.Top, 0f));
+            Vector3 p2 = baked.LocalMatrix.MultiplyPoint3x4(new Vector3(rect.Right, rect.Top, 0f));
+            Vector3 p3 = baked.LocalMatrix.MultiplyPoint3x4(new Vector3(rect.Right, rect.Bottom, 0f));
+
+            float u0 = 0f, v0 = 0f, u1 = 1f, v1 = 1f;
+            if (baked.SourceRect.HasValue && texture != null)
+            {
+                DrawRect src = baked.SourceRect.Value;
+                float texW = Mathf.Max(1, texture.width);
+                float texH = Mathf.Max(1, texture.height);
+                u0 = src.Left / texW;
+                u1 = src.Right / texW;
+                v0 = src.Bottom / texH;
+                v1 = src.Top / texH;
+            }
+
+            drawer.Tri(0, 1, 2).Tri(0, 2, 3);
+            drawer.PosUv(p0.x, p0.y, u0, v0);
+            drawer.PosUv(p1.x, p1.y, u0, v1);
+            drawer.PosUv(p2.x, p2.y, u1, v1);
+            drawer.PosUv(p3.x, p3.y, u1, v0);
+        }
+
+        static void DestroyImageSlot(ImageSlotState slot)
+        {
+            if (slot.Gob != null)
+            {
+                UnityEngine.Object.Destroy(slot.Gob);
+            }
+            if (slot.Material != null)
+            {
+                UnityEngine.Object.Destroy(slot.Material);
+            }
+        }
+
         void ApplyVisualState(NodeState state)
         {
             ApplyActive(state);
@@ -328,6 +446,15 @@ namespace Polaris.Drawing.Internal
                 state.ShapeGob.transform.localScale = new Vector3(state.Transform.ScaleX, state.Transform.ScaleY, 1f);
                 RecolorShape(state);
             }
+
+            foreach (ImageSlotState image in state.Images)
+            {
+                image.Gob.transform.localPosition = new Vector3(
+                    state.Transform.Translation.X, state.Transform.Translation.Y, state.ComputedZ);
+                image.Gob.transform.localRotation = Quaternion.Euler(0f, 0f, state.Transform.Rotation * Mathf.Rad2Deg);
+                image.Gob.transform.localScale = new Vector3(state.Transform.ScaleX, state.Transform.ScaleY, 1f);
+            }
+            RecolorImages(state);
 
             Matrix4x4 nodeMatrix = DrawNodeGeometry.ToMatrix(state.Transform);
             foreach (TextSlotState text in state.Texts)
@@ -349,6 +476,10 @@ namespace Polaris.Drawing.Internal
             if (state.ShapeGob != null)
             {
                 state.ShapeGob.SetActive(visible && state.HasShapeContent);
+            }
+            foreach (ImageSlotState image in state.Images)
+            {
+                image.Gob.SetActive(visible);
             }
             foreach (TextSlotState text in state.Texts)
             {
@@ -376,6 +507,23 @@ namespace Polaris.Drawing.Internal
                 live[i] = c;
             }
             state.ShapeDrawer.updateForMeshRenderer();
+        }
+
+        void RecolorImages(NodeState state)
+        {
+            float opacity = Mathf.Clamp01(state.Opacity);
+            foreach (ImageSlotState image in state.Images)
+            {
+                Color32[] live = image.Drawer.getColorArray();
+                int count = Mathf.Min(live.Length, image.BaseColors.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    Color32 c = image.BaseColors[i];
+                    c.a = (byte)(opacity * c.a);
+                    live[i] = c;
+                }
+                image.Drawer.updateForMeshRenderer();
+            }
         }
 
         void ApplyTextOpacity(NodeState state)

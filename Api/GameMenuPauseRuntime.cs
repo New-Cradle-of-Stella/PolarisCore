@@ -4,13 +4,11 @@ using nel.gm;
 namespace Polaris.API
 {
     /// <summary>
-    /// <see cref="GameMenuAPI.SetWorldPause"/> 的运行时内核：跟踪 PauseMem/ResumeMem 的归属，
-    /// 以及四个关键补丁是否全部生效（见 <see cref="FeatureAvailable"/>）。只在 Unity 主线程读写。
+    /// <see cref="GameMenuAPI.SetWorldPause"/> 的运行时内核：跟踪 PauseMem/ResumeMem 的归属。
+    /// 只在 Unity 主线程读写。
     /// </summary>
     internal static class GameMenuPauseRuntime
     {
-        internal enum PatchTarget { Activate, Deactivate, Run, RunPostForDraw }
-
         /// <summary>ESC 菜单打开时是否暂停世界；默认 <c>true</c>，与原版行为一致。</summary>
         internal static bool PauseWorldWhileOpen = true;
 
@@ -20,28 +18,6 @@ namespace Polaris.API
 
         /// <summary>上一次 <see cref="Pump"/> 时，外部暂停（转场/冻结器）是否处于活动状态，用于探测下降沿。</summary>
         internal static bool ExternalStopWasActive;
-
-        static bool activatePatched;
-        static bool deactivatePatched;
-        static bool runPatched;
-        static bool runPostForDrawPatched;
-
-        /// <summary>四个关键补丁是否全部成功应用。任一缺失时，所有 helper 一律原样执行原版行为
-        /// （fail-closed），避免"PauseMem 已跳过但世界循环仍停止"之类的半启用状态。</summary>
-        internal static bool FeatureAvailable { get; private set; }
-
-        internal static void ReportPatchApplied(PatchTarget target)
-        {
-            switch (target)
-            {
-                case PatchTarget.Activate: activatePatched = true; break;
-                case PatchTarget.Deactivate: deactivatePatched = true; break;
-                case PatchTarget.Run: runPatched = true; break;
-                case PatchTarget.RunPostForDraw: runPostForDrawPatched = true; break;
-            }
-
-            FeatureAvailable = activatePatched && deactivatePatched && runPatched && runPostForDrawPatched;
-        }
 
         internal static void SetPolicy(bool enabled)
         {
@@ -57,10 +33,10 @@ namespace Polaris.API
         /// <summary>替换 <c>UiGameMenu.activate()</c> 里原本的 <c>M2D.PauseMem(true)</c> 调用。</summary>
         internal static void OnMenuPauseMemory(NelM2DBase m2d, bool particleSetterStop)
         {
-            if (!FeatureAvailable || PauseWorldWhileOpen)
+            if (PauseWorldWhileOpen)
             {
                 m2d.PauseMem(particleSetterStop);
-                MenuPauseApplied = FeatureAvailable;
+                MenuPauseApplied = true;
                 return;
             }
 
@@ -70,12 +46,6 @@ namespace Polaris.API
         /// <summary>替换 <c>UiGameMenu.deactivate()</c> 里原本的 <c>M2D.ResumeMem(true)</c> 调用。</summary>
         internal static void OnMenuResumeMemory(NelM2DBase m2d, bool particleSetterResume)
         {
-            if (!FeatureAvailable)
-            {
-                m2d.ResumeMem(particleSetterResume);
-                return;
-            }
-
             if (MenuPauseApplied && !IsExternalStopActive())
             {
                 m2d.ResumeMem(particleSetterResume);
@@ -88,9 +58,9 @@ namespace Polaris.API
         internal static bool ShouldStopWorld(UiGameMenu gm)
         {
             bool vanilla = gm.isStoppingGame();
-            if (!vanilla || !FeatureAvailable)
+            if (!vanilla)
             {
-                return vanilla;
+                return false;
             }
 
             // 真正的终止/关闭状态一律照原版停；只解除"菜单打开且策略为 false"造成的停止。
@@ -128,11 +98,6 @@ namespace Polaris.API
 
         static void Reconcile()
         {
-            if (!FeatureAvailable)
-            {
-                return;
-            }
-
             NelM2DBase m2d = GameBinding.NelM2D;
             UiGameMenu gm = m2d?.GM;
             if (gm == null || !gm.isActive() || IsExternalStopActive())

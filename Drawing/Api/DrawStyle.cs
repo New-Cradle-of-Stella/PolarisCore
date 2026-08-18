@@ -69,8 +69,8 @@ namespace Polaris.Drawing
     /// Drawing 不负责加载或缓存贴图本体，只在绘制时读取其像素尺寸与内容。
     /// </summary>
     /// <remarks>
-    /// <see cref="DrawContext.DrawImage"/> 尚未接入后端（图片渲染没有经过阶段 0 动态验证），
-    /// 当前调用会抛 <see cref="NotSupportedException"/>；类型本身先落地，避免以后改公共签名。
+    /// Screen 节点每张图片各自一个 <c>MeshDrawer</c>/材质；Map 节点每张图片各自一份缓存网格，
+    /// 每帧通过 <c>RotaTempMeshDrawer</c> 复制到 Effect Mesh，和文本走同一套已验证的路径。
     /// </remarks>
     public sealed class DrawImage
     {

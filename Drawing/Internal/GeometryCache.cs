@@ -30,6 +30,35 @@ namespace Polaris.Drawing.Internal
         internal float Opacity { get; }
     }
 
+    /// <summary>一条已烘焙好的图片命令；语义和 <see cref="BakedTextOp"/> 对称，只是位置换成了整块目标矩形。</summary>
+    internal readonly struct BakedImageOp
+    {
+        internal BakedImageOp(DrawImage image, DrawRect destination, DrawRect? sourceRect, uint tintArgb, Matrix4x4 localMatrix, float opacity)
+        {
+            Image = image;
+            Destination = destination;
+            SourceRect = sourceRect;
+            TintArgb = tintArgb;
+            LocalMatrix = localMatrix;
+            Opacity = opacity;
+        }
+
+        internal DrawImage Image { get; }
+
+        /// <summary><see cref="DrawContext.DrawImage"/> 传入的原始目标矩形，尚未经过 <see cref="LocalMatrix"/>。</summary>
+        internal DrawRect Destination { get; }
+
+        /// <summary><c>null</c> 表示用整张贴图。</summary>
+        internal DrawRect? SourceRect { get; }
+
+        internal uint TintArgb { get; }
+
+        /// <summary>录制时 PushTransform 栈折叠出的矩阵；与 <see cref="Destination"/> 一起才是完整的局部变换。</summary>
+        internal Matrix4x4 LocalMatrix { get; }
+
+        internal float Opacity { get; }
+    }
+
     /// <summary>
     /// 把一个节点录制下来的 <see cref="DrawOp"/> 序列烘焙成几何缓存：图形命令直接写进一个裸的（不挂
     /// GameObject、不需要材质）<see cref="MeshDrawer"/>，作为节点的“源缓存”；文本命令则解析出绝对矩阵与
@@ -41,14 +70,16 @@ namespace Polaris.Drawing.Internal
         internal static MeshDrawer CreateSourceBuffer() => new MeshDrawer();
 
         /// <summary>
-        /// 回放一个节点的命令流，把图形写进 <paramref name="target"/>，返回按录制顺序排列的文本命令
-        /// （顺序即调用方复用 <see cref="TextMeshCacheEntry"/> 条目的下标）。
+        /// 回放一个节点的命令流，把图形写进 <paramref name="target"/>，分别返回按录制顺序排列的文本/图片命令
+        /// （顺序即调用方复用 <see cref="TextMeshCacheEntry"/>/图片槽位条目的下标）。图片不写进
+        /// <paramref name="target"/>：每张图片需要自己的贴图/材质，不能塞进共享的“形状”缓存。
         /// </summary>
-        internal static List<BakedTextOp> Bake(MeshDrawer target, IReadOnlyList<DrawOp> ops)
+        internal static (List<BakedTextOp> Texts, List<BakedImageOp> Images) Bake(MeshDrawer target, IReadOnlyList<DrawOp> ops)
         {
             var transformStack = new List<DrawTransform>();
             var opacityStack = new List<float>();
             var texts = new List<BakedTextOp>();
+            var images = new List<BakedImageOp>();
 
             target.Identity();
             target.base_z = 0f;
@@ -76,7 +107,15 @@ namespace Polaris.Drawing.Internal
                         break;
 
                     case DrawOpKind.Shape:
-                        Author(target, op, OpacityProduct(opacityStack));
+                        if (op.Shape == ShapeKind.Image)
+                        {
+                            images.Add(new BakedImageOp(
+                                op.Image, op.Rect, op.SourceRect, op.ColorArgb, target.getCurrentMatrix(), OpacityProduct(opacityStack)));
+                        }
+                        else
+                        {
+                            Author(target, op, OpacityProduct(opacityStack));
+                        }
                         break;
 
                     case DrawOpKind.Text:
@@ -87,7 +126,7 @@ namespace Polaris.Drawing.Internal
             }
 
             target.Identity();
-            return texts;
+            return (texts, images);
         }
 
         static float OpacityProduct(List<float> stack)
@@ -160,6 +199,14 @@ namespace Polaris.Drawing.Internal
 
                 case ShapeKind.FillPolygon:
                     FillPolygon(target, op.Points);
+                    break;
+
+                case ShapeKind.PathFill:
+                    PathGeometry.Fill(target, PathGeometry.Flatten(op.PathCommands));
+                    break;
+
+                case ShapeKind.PathStroke:
+                    PathGeometry.Stroke(target, PathGeometry.Flatten(op.PathCommands), op.Thickness);
                     break;
             }
         }
@@ -315,7 +362,8 @@ namespace Polaris.Drawing.Internal
             return true;
         }
 
-        static float SignedArea(IReadOnlyList<DrawPoint> polygon)
+        /// <summary>正值表示逆时针（CCW）。<see cref="PathGeometry"/> 判断轮廓方向/挑外轮廓时也用它。</summary>
+        internal static float SignedArea(IReadOnlyList<DrawPoint> polygon)
         {
             float area = 0f;
             int n = polygon.Count;
@@ -328,7 +376,7 @@ namespace Polaris.Drawing.Internal
             return area * 0.5f;
         }
 
-        static float Cross(DrawPoint a, DrawPoint b, DrawPoint c)
+        internal static float Cross(DrawPoint a, DrawPoint b, DrawPoint c)
             => (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
 
         static bool PointInTriangle(DrawPoint p, DrawPoint a, DrawPoint b, DrawPoint c)
@@ -336,9 +384,8 @@ namespace Polaris.Drawing.Internal
             float d1 = Cross(a, b, p);
             float d2 = Cross(b, c, p);
             float d3 = Cross(c, a, p);
-            bool hasNeg = d1 < 0f || d2 < 0f || d3 < 0f;
-            bool hasPos = d1 > 0f || d2 > 0f || d3 > 0f;
-            return !(hasNeg && hasPos);
+            const float epsilon = 0.000001f;
+            return d1 > epsilon && d2 > epsilon && d3 > epsilon;
         }
     }
 }

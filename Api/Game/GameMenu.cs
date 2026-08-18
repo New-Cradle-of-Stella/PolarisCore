@@ -175,7 +175,7 @@ namespace Polaris.API
         public bool IsClosing() => Read(static m => m.isClosingGame(), false);
 
         /// <summary>判断该菜单是否正在暂停世界运行。</summary>
-        public bool IsStoppingWorld() => Read(static m => m.isStoppingGame(), false);
+        public bool IsStoppingWorld() => Read(static m => GameMenuPauseRuntime.ShouldStopWorld(m), false);
 
         /// <summary>判断该菜单是否处于长椅菜单状态。</summary>
         public bool IsBenchMenuActive() => Read(static m => m.isBenchMenuActive(false), false);

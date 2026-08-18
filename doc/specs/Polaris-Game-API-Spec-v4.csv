@@ -105,7 +105,7 @@ API方法,签名,功能说明
 [动态｜GameMap] Refresh,bool Refresh(),整张地图重载贴图与网格，返回是否执行成功。
 [动态｜GameMap] HasLayer,bool HasLayer(string layerKey),判断该地图是否存在这个名字的图层。
 [动态｜GameMap] LoadLayer,bool LoadLayer(string layerKey),重新打开指定图层，图层不存在时返回 false。
-[动态｜GameMap] SetElementActive,"bool SetElementActive(string kind, string elementKey, bool active)","开关具名地图元素；kind 目前只支持 ""lp""（标签点），静态 chip 是网格数据没有开关。"
+[动态｜GameMap] SetAnchorActive,"bool SetAnchorActive(string anchorKey, bool active)",开关具名锚点（标签点）。
 [动态｜GameMap] SetDark,bool SetDark(bool enabled),开关地图黑暗区域状态；读取见 IsDark。
 动态 API｜GameCharacter 角色基础实例,,
 API方法,签名,功能说明
@@ -185,7 +185,7 @@ API方法,签名,功能说明
 [动态｜GameEnhancer] IsActive,bool IsActive { get; },判断当前存档是否正在启用该插件。
 [动态｜GameEnhancer] ActivationStatus,GameEnhancerActivationStatus ActivationStatus { get; },查询当前能否启用以及拒绝原因；只读且不修改状态。
 [动态｜GameEnhancer] Obtain,bool Obtain(bool notify = false),获得该插件；已拥有时不重复变更。notify 明确控制是否显示原版获得通知。
-[动态｜GameEnhancer] Revoke,bool Revoke(bool notify = false),移除该插件；若正在启用则原子停用后移除。返回状态是否实际变化。
+[动态｜GameEnhancer] Revoke,bool Revoke(),移除该插件；若正在启用则原子停用后移除。返回状态是否实际变化。
 [动态｜GameEnhancer] SetActive,GameEnhancerActivationStatus SetActive(bool active),启用或停用该插件；启用时检查所有权、槽位和原版限制，并返回明确结果。
 动态 API｜GameSkill 技能实例,,
 API方法,签名,功能说明
@@ -201,8 +201,8 @@ API方法,签名,功能说明
 [动态｜GameSkill] ManipulationCount,int ManipulationCount { get; },读取该技能可配置的操作方式数量；没有配置项时为零。
 [动态｜GameSkill] GetManipulationText,string? GetManipulationText(int option),读取指定操作方式在当前游戏语言下的说明；索引非法时抛 ArgumentOutOfRangeException。
 [动态｜GameSkill] IsManipulationEnabled,bool IsManipulationEnabled(int option),查询指定操作方式是否启用；索引非法时返回 false。
-[动态｜GameSkill] Obtain,"bool Obtain(bool enable = true, bool notify = false)",获得该技能；enable 明确控制是否同时启用，notify 明确控制是否显示原版获得通知。
-[动态｜GameSkill] Revoke,bool Revoke(bool notify = false),移除该技能并原子清除启用状态；返回状态是否实际变化。
+[动态｜GameSkill] Obtain,bool Obtain(bool enable = true),获得该技能；enable 控制是否同时启用。
+[动态｜GameSkill] Revoke,bool Revoke(),移除该技能并原子清除启用状态；返回状态是否实际变化。
 [动态｜GameSkill] SetEnabled,bool SetEnabled(bool enabled),启用或禁用该技能；未获得、常驻限制或原版规则拒绝时返回 false。
 [动态｜GameSkill] SetManipulationEnabled,,
 动态 API｜GameAudioPlayback 音频播放实例,,

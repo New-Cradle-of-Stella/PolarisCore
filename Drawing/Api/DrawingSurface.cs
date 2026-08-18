@@ -12,13 +12,10 @@ namespace Polaris.Drawing
 
         public DrawLifetime Lifetime { get; set; } = DrawLifetime.Scene;
 
-        /// <summary>同一 Plane 上多个 Surface 之间的粗粒度顺序；Surface 内部节点顺序另见 <see cref="DrawNode.Order"/>。</summary>
-        public int Order { get; set; }
+        /// <summary>Screen 同一 Plane 上多个 Surface 之间的粗粒度顺序；Surface 内部节点顺序另见 <see cref="DrawNode.Order"/>。</summary>
+        public int ScreenOrder { get; set; }
 
-        /// <summary>Screen 专用：是否把最终位置吸附到整数像素。</summary>
-        public bool PixelSnap { get; set; } = true;
-
-        /// <summary>用于内部对象命名与调试；不填时从第一个 <c>Add(...)</c> 回调的所属程序集推断。</summary>
+        /// <summary>用于内部对象命名与调试；不填时使用固定名称。</summary>
         public string DebugName { get; set; }
     }
 
@@ -60,9 +57,6 @@ namespace Polaris.Drawing
             get => runtime.Position;
             set => runtime.Position = value;
         }
-
-        /// <summary>当前全部节点几何在 Surface 本地坐标系下的包围盒。</summary>
-        public DrawRect Bounds => runtime.Bounds;
 
         public void Dispose() => runtime.Dispose();
     }

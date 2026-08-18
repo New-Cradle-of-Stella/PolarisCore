@@ -32,7 +32,6 @@ namespace Polaris.Patch
                     .SetInstructionAndAdvance(new CodeInstruction(OpCodes.Call, replacement));
             }
 
-            GameMenuPauseRuntime.ReportPatchApplied(GameMenuPauseRuntime.PatchTarget.Run);
             return codeMatcher.Instructions();
         }
     }

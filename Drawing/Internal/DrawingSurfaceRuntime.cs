@@ -34,8 +34,6 @@ namespace Polaris.Drawing.Internal
         /// <summary>由 <see cref="DrawingRuntime"/> 每帧调用；Screen 通常是空实现，Map 用来推进 Follow。</summary>
         void Pump(float deltaSeconds);
 
-        DrawRect ComputeBounds(IReadOnlyList<int> nodeIds);
-
         DrawingDebugStats.BackendStats GetStats();
 
         void SetSurfacePosition(DrawPoint position);
@@ -64,7 +62,7 @@ namespace Polaris.Drawing.Internal
         readonly List<int> nodeIds = new();
         readonly IDrawingBackend backend;
         int nextNodeId;
-        string resolvedDebugName;
+        readonly string debugName;
         DrawPoint position;
         bool visible = true;
         MapFollowRuntime activeFollow;
@@ -76,15 +74,18 @@ namespace Polaris.Drawing.Internal
             Space = options.Space;
             Plane = options.Plane;
             Lifetime = options.Lifetime;
-            SurfaceOrder = options.Order;
-            PixelSnap = options.PixelSnap;
-            resolvedDebugName = options.DebugName;
+            ScreenOrder = options.ScreenOrder;
+            debugName = options.DebugName ?? "surface";
 
             DrawSpaceRules.Validate(Space, Plane);
+            if (Space == DrawSpace.Map && ScreenOrder != 0)
+            {
+                throw new ArgumentException("ScreenOrder can only be used with DrawSpace.Screen.", nameof(options));
+            }
 
             backend = Space == DrawSpace.Screen
-                ? new ScreenDrawingBackend(Plane, SurfaceOrder, resolvedDebugName ?? "surface")
-                : new MapDrawingBackend(Plane, resolvedDebugName ?? "surface");
+                ? new ScreenDrawingBackend(Plane, ScreenOrder, debugName)
+                : new MapDrawingBackend(Plane, debugName);
         }
 
         internal DrawSpace Space { get; }
@@ -93,9 +94,7 @@ namespace Polaris.Drawing.Internal
 
         internal DrawLifetime Lifetime { get; }
 
-        internal int SurfaceOrder { get; }
-
-        internal bool PixelSnap { get; }
+        internal int ScreenOrder { get; }
 
         internal bool IsDisposed => disposed;
 
@@ -125,15 +124,6 @@ namespace Polaris.Drawing.Internal
             }
         }
 
-        internal DrawRect Bounds
-        {
-            get
-            {
-                EnsureNotDisposed();
-                return backend.ComputeBounds(nodeIds);
-            }
-        }
-
         internal DrawingDebugStats.BackendStats Stats => backend.GetStats();
 
         internal int RebuildCount => rebuildCount;
@@ -147,9 +137,6 @@ namespace Polaris.Drawing.Internal
             {
                 throw new ArgumentNullException(nameof(build));
             }
-
-            // 调用方没给 DebugName 时，从构建回调的声明程序集反查插件 GUID 当名字，不做栈回溯。
-            resolvedDebugName ??= Polaris.Infra.CallbackOwnerResolver.ResolveGuid(build.Method);
 
             int id = nextNodeId++;
             var record = new NodeRecord { Id = id, Build = build };

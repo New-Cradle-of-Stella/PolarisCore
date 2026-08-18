@@ -205,20 +205,17 @@ namespace Polaris.API
             });
         }
 
-        /// <summary>
-        /// 开关一个具名地图元素，返回是否找到并切换成功。
-        /// <paramref name="kind"/> 目前只支持 <c>"lp"</c>（标签点）——静态地图 chip 是网格数据，没有启用开关。
-        /// </summary>
-        public bool SetElementActive(string kind, string elementKey, bool active)
+        /// <summary>开关一个具名锚点（标签点），返回是否找到并切换成功。</summary>
+        public bool SetAnchorActive(string anchorKey, bool active)
         {
-            if (!string.Equals(kind, "lp", StringComparison.Ordinal) || string.IsNullOrEmpty(elementKey))
+            if (string.IsNullOrEmpty(anchorKey))
             {
                 return false;
             }
 
-            return Act("SetElementActive", m =>
+            return Act("SetAnchorActive", m =>
             {
-                M2LabelPoint point = m.getLabelPoint(elementKey);
+                M2LabelPoint point = m.getLabelPoint(anchorKey);
                 if (point == null)
                 {
                     return false;

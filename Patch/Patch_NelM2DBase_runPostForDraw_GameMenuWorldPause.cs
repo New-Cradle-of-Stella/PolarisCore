@@ -28,7 +28,6 @@ namespace Polaris.Patch
                 .ThrowIfInvalid("Could not find the GM.isStoppingGame() call inside NelM2DBase.runPostForDraw")
                 .SetInstructionAndAdvance(new CodeInstruction(OpCodes.Call, replacement));
 
-            GameMenuPauseRuntime.ReportPatchApplied(GameMenuPauseRuntime.PatchTarget.RunPostForDraw);
             return codeMatcher.Instructions();
         }
     }

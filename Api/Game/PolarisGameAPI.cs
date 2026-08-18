@@ -160,10 +160,16 @@ namespace Polaris
                 public static GamePlayer CurrentPlayer => GamePlayer.Wrap(GameBinding.Player);
 
                 /// <summary>
-                /// 直接换图无法保留玩家实例，因此该入口已禁用。
-                /// 地图不存在时抛 <see cref="ArgumentException"/>；地图存在时抛 <see cref="NotSupportedException"/>。
+                /// 切换到指定地图并返回新地图实例（高权限操作，触发事件/淡入淡出/存档时机不受控）。
+                /// 本版本没有该地图时抛 <see cref="ArgumentException"/>。
                 /// </summary>
-                [Obsolete("Direct map replacement cannot preserve the player. Use the game's normal transfer flow instead.")]
+                /// <remarks>
+                /// <c>M2DBase.changeMap</c> 自己的 <c>auto_evacuate</c>（默认开）会把玩家 mover 原样
+                /// 搬到新地图，但不会挪动坐标——原版正常转场（<c>M2LpMapTransferBase.executeTransfer</c>）
+                /// 在找不到具体传送点时，也是靠 <c>setToDefaultPosition</c> 兜底把玩家放到新地图的
+                /// <c>start</c> 标签点（没有则新地图正中）。这里补的就是这一步，不然玩家会贴在新地图上
+                /// 一个跟旧地图坐标数值凑巧相同、但很可能出界或卡墙的位置——即“脱离地图”的真正原因。
+                /// </remarks>
                 public static GameMap ChangeMap(string mapKey)
                 {
                     if (string.IsNullOrEmpty(mapKey))
@@ -193,9 +199,17 @@ namespace Polaris
                         throw new ArgumentException($"No such map in this game version: {mapKey}.", nameof(mapKey));
                     }
 
-                    throw new NotSupportedException(
-                        "Direct map replacement is disabled because it detaches the player. " +
-                        "Use the game's normal map-transfer event with an explicit destination entry.");
+                    try
+                    {
+                        Map2d changed = m2d.changeMap(target) ?? target;
+                        GameBinding.Player?.setToDefaultPosition(no_set_camera: false, changed);
+                        return GameMap.Wrap(changed);
+                    }
+                    catch (Exception ex)
+                    {
+                        Errors.Report(ex, "Game.World.ChangeMap");
+                        throw new InvalidOperationException($"The game refused to change to the map: {mapKey}.", ex);
+                    }
                 }
 
                 /// <summary>

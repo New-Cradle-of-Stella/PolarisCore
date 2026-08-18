@@ -15,24 +15,7 @@ namespace Polaris
         public bool PauseWorldWhileOpen => GameMenuPauseRuntime.PauseWorldWhileOpen;
 
         /// <summary>设置 ESC 菜单打开时是否暂停世界（默认暂停）。进程级全局状态，不持久化。</summary>
-        public PolarisActionResult SetWorldPause(bool enabled)
-        {
-            if (!GameMenuPauseRuntime.FeatureAvailable)
-            {
-                return PolarisActionResult.Unsupported("ESC-menu world-pause control is unavailable in this game version.");
-            }
-
-            try
-            {
-                GameMenuPauseRuntime.SetPolicy(enabled);
-                return PolarisActionResult.Ok();
-            }
-            catch (Exception ex)
-            {
-                PolarisAPI.Errors.Report(ex, "GameMenu.SetWorldPause", typeof(GameMenuAPI).Assembly);
-                return PolarisActionResult.Fail(PolarisActionStatus.Failed, ex.Message);
-            }
-        }
+        public void SetWorldPause(bool enabled) => GameMenuPauseRuntime.SetPolicy(enabled);
 
         /// <summary>由 <see cref="Plugin.Update"/> 每帧调用：外部暂停（事件/转场）结束后的所有权对账。</summary>
         internal void Pump() => GameMenuPauseRuntime.Pump();

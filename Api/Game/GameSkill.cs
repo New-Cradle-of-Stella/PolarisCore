@@ -17,7 +17,7 @@ namespace Polaris.API
         /// <summary>
         /// 原版存档把 <c>manip_bits</c> 左移一位后写进<b>单个字节</b>
         /// （<c>SkillManager.writeBinaryTo</c>：<c>(new_icon?1:0) | (manip_bits &lt;&lt; 1)</c>），
-        /// 所以操作选项 0..5 能稳定存下，序号 6 会被截断。运行时仍可读写它，但不承诺跨存档保留。
+        /// 所以公共 API 只暴露能稳定保存的操作选项 0..5。
         /// </summary>
         internal const int LastPersistedManipulationOption = 5;
 
@@ -108,7 +108,8 @@ namespace Polaris.API
         public bool IsEnabled => Read(static s => s.enabled, false);
 
         /// <summary>获取该技能可配置的操作方式数量；没有可配置项时为 0。</summary>
-        public int ManipulationCount => Read(static s => s.manip_max <= 1 ? 0 : s.manip_max, 0);
+        public int ManipulationCount => Read(
+            static s => s.manip_max <= 1 ? 0 : Math.Min((int)s.manip_max, LastPersistedManipulationOption + 1), 0);
 
         /// <summary>
         /// 读取指定操作方式在当前语言下的说明。
@@ -150,12 +151,7 @@ namespace Polaris.API
         /// 返回状态是否<b>实际</b>发生了变化。
         /// </summary>
         /// <param name="enable">是否同时启用。</param>
-        /// <param name="notify">
-        /// 是否显示原版获得提示。<b>当前版本无效</b>：原版技能获得演出只存在于事件指令
-        /// （<c>GETSKILL</c>）内部，没有可直接调用的入口，而计划禁止用伪造事件指令来实现它。
-        /// 参数保留是为了与 v3 签名一致，数据修改与回调不受它影响。
-        /// </param>
-        public bool Obtain(bool enable = true, bool notify = false)
+        public bool Obtain(bool enable = true)
         {
             EnsureUsable();
 
@@ -204,8 +200,7 @@ namespace Polaris.API
         /// <summary>
         /// 移除该技能并原子清除启用状态。<c>first_visible</c> 的技能不允许移除，返回 <c>false</c>。
         /// </summary>
-        /// <param name="notify">与 <see cref="Obtain"/> 同理，当前版本无效。</param>
-        public bool Revoke(bool notify = false)
+        public bool Revoke()
         {
             EnsureUsable();
 

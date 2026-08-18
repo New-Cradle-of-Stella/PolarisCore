@@ -181,7 +181,7 @@ namespace Polaris.API
         /// 移除该插件。若正在启用，先原子停用并重算，再从强化品存储移除。
         /// 返回状态是否<b>实际</b>发生了变化。
         /// </summary>
-        public bool Revoke(bool notify = false)
+        public bool Revoke()
         {
             EnsureUsable();
 
