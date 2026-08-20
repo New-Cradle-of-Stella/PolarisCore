@@ -384,7 +384,7 @@ namespace Polaris.Drawing.Internal
 
         static Material BuildImageMaterial(Texture2D texture)
         {
-            Material material = MTRX.newMtr(MTRX.getMtr(BLEND.NORMAL));
+            Material material = MTRX.newMtr(MTRX.blend2ShaderImg(BLEND.NORMAL));
             material.SetTexture("_MainTex", texture);
             return material;
         }

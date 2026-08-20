@@ -9,6 +9,33 @@ namespace Polaris.API
     /// </summary>
     internal static class GameMenuPauseRuntime
     {
+        /// <summary>标识 <see cref="ReportPatchApplied"/> 汇报的是哪一个 Harmony 转译补丁。</summary>
+        internal enum PatchTarget
+        {
+            Activate,
+            Deactivate
+        }
+
+        /// <summary><c>UiGameMenu.activate()</c> 里的转译补丁是否成功找到并替换了它的目标调用。</summary>
+        internal static bool ActivatePatchApplied { get; private set; }
+
+        /// <summary><c>UiGameMenu.deactivate()</c> 里的转译补丁是否成功找到并替换了它的目标调用。</summary>
+        internal static bool DeactivatePatchApplied { get; private set; }
+
+        /// <summary>由对应的转译补丁在成功替换目标调用后回报，供后续健康检查判断两个补丁是否都生效。</summary>
+        internal static void ReportPatchApplied(PatchTarget target)
+        {
+            switch (target)
+            {
+                case PatchTarget.Activate:
+                    ActivatePatchApplied = true;
+                    break;
+                case PatchTarget.Deactivate:
+                    DeactivatePatchApplied = true;
+                    break;
+            }
+        }
+
         /// <summary>ESC 菜单打开时是否暂停世界；默认 <c>true</c>，与原版行为一致。</summary>
         internal static bool PauseWorldWhileOpen = true;
 

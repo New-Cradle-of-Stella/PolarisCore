@@ -67,7 +67,7 @@ namespace Polaris.Drawing.Internal
     /// </summary>
     internal static class GeometryCache
     {
-        internal static MeshDrawer CreateSourceBuffer() => new MeshDrawer();
+        internal static MeshDrawer CreateSourceBuffer() => new MeshDrawer { draw_gl_only = true };
 
         /// <summary>
         /// 回放一个节点的命令流，把图形写进 <paramref name="target"/>，分别返回按录制顺序排列的文本/图片命令

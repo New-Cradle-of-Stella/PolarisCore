@@ -385,7 +385,7 @@ namespace Polaris.Drawing.Internal
                 {
                     UnityEngine.Object.Destroy(slot.Material);
                 }
-                slot.Material = MTRX.newMtr(MTRX.getMtr(BLEND.NORMAL));
+                slot.Material = MTRX.newMtr(MTRX.blend2ShaderImg(BLEND.NORMAL));
                 slot.Material.SetTexture("_MainTex", texture);
                 slot.LastTexture = texture;
             }

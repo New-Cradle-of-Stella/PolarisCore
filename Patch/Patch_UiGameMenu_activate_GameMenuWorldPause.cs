@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
+using m2d;
 using nel;
 using nel.gm;
 using Polaris.API;
@@ -17,17 +19,33 @@ namespace Polaris.Patch
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            var pauseMem = AccessTools.Method(typeof(NelM2DBase), nameof(NelM2DBase.PauseMem));
-            var replacement = AccessTools.Method(typeof(GameMenuPauseRuntime), nameof(GameMenuPauseRuntime.OnMenuPauseMemory));
+            var replacement = AccessTools.Method(typeof(GameMenuPauseRuntime), nameof(GameMenuPauseRuntime.OnMenuPauseMemory),
+                new[] { typeof(NelM2DBase), typeof(bool) });
 
             var codeMatcher = new CodeMatcher(instructions);
 
             codeMatcher.MatchStartForward(new CodeMatch(ins =>
-                    (ins.opcode == OpCodes.Call || ins.opcode == OpCodes.Callvirt) && ins.OperandIs(pauseMem)))
+                    IsMemoryCall(ins, nameof(M2DBase.PauseMem))))
                 .ThrowIfInvalid("Could not find the M2D.PauseMem(bool) call inside UiGameMenu.activate")
                 .SetInstructionAndAdvance(new CodeInstruction(OpCodes.Call, replacement));
 
+            GameMenuPauseRuntime.ReportPatchApplied(GameMenuPauseRuntime.PatchTarget.Activate);
             return codeMatcher.Instructions();
+        }
+
+        static bool IsMemoryCall(CodeInstruction instruction, string methodName)
+        {
+            if (instruction.opcode != OpCodes.Call && instruction.opcode != OpCodes.Callvirt)
+                return false;
+
+            if (!(instruction.operand is MethodInfo method) || method.Name != methodName)
+                return false;
+
+            ParameterInfo[] parameters = method.GetParameters();
+            return method.DeclaringType != null
+                && typeof(M2DBase).IsAssignableFrom(method.DeclaringType)
+                && parameters.Length == 1
+                && parameters[0].ParameterType == typeof(bool);
         }
     }
 }
