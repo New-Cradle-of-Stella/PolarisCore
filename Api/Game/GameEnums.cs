@@ -1,5 +1,18 @@
 namespace Polaris.API
 {
+    /// <summary>原版自动存档的提示与安全检查模式。</summary>
+    public enum GameAutosaveMode
+    {
+        /// <summary>普通自动存档；沿用原版的玩家存活与地图就绪检查。</summary>
+        Normal = 0,
+
+        /// <summary>长椅自动存档；安全检查与普通模式相同，但使用长椅提示样式。</summary>
+        Bench = 1,
+
+        /// <summary>强制自动存档；跳过原版的 <c>canSave</c> 检查。</summary>
+        Force = 2,
+    }
+
     /// <summary>角色朝向。游戏内部用布尔 <c>is_right</c> 表示，这里改用具名类型以避免调用点含义不明。</summary>
     public enum GameFacing
     {

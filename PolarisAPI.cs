@@ -16,7 +16,7 @@
         /// <summary>本地化 resolver 注册表：注册 key→文案回调，供原版 <c>TX.Get</c> 优先采用。</summary>
         public static Localization.LocalizationAPI Localization { get; } = new();
 
-        // ── 以下是全库共用的基础设施，与任何单一子系统的领域无关（领域概念应去 PolarisUIAPI / PolarisResAPI）。
+        // ── 以下是全库共用的基础设施，与任何单一子系统的领域无关（领域概念应去 UIAPI / ResAPI）。
 
         /// <summary>BepInEx 已加载插件的只读视图；软依赖判断走 <see cref="Infra.ModulesAPI.IsLoaded"/>。</summary>
         public static Infra.ModulesAPI Modules { get; } = new();
