@@ -71,9 +71,8 @@ namespace Polaris
                 }
 
                 /// <summary>
-                /// 读取当前存档可用于启用插件的总槽位，也就是贵重品存储里 <c>enhancer_slot</c> 的持有数量。
-                /// 刻意重算而不是读原版的 <c>ENHA.max_slot</c> 缓存：那个值只在
-                /// <c>fineEnhancerStorage</c> 跑过之后才准。存档未加载时为 0。
+                /// 读取当前存档可用于启用插件的总槽位，也就是贵重品存储里 <c>enhancer_slot</c> 的持有数量，存档未加载时为 0。
+                /// 刻意重算而不是读原版的 <c>ENHA.max_slot</c> 缓存，那个值只在 <c>fineEnhancerStorage</c> 跑过之后才准。
                 /// </summary>
                 public static int SlotCapacity => Safe(
                     static () =>

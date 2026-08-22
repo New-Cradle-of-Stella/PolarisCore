@@ -4,9 +4,9 @@ using m2d;
 namespace Polaris.API
 {
     /// <summary>
-    /// 场上角色（玩家/敌人/NPC 共通部分）：位置、速度、朝向、体力与魔力，以及位移、治疗和伤害。
-    /// 玩家、敌人的独有状态机分别在 <see cref="GamePlayer"/>、<see cref="GameEnemy"/>。
-    /// 角色对象是对象池复用的，不要缓存原生对象；包装器会随地图切换整批失效。
+    /// 场上角色（玩家/敌人/NPC 共通部分）：位置、速度、朝向、体力与魔力，以及位移、治疗和伤害；
+    /// 独有状态机分别在 <see cref="GamePlayer"/>、<see cref="GameEnemy"/>。
+    /// 角色对象是对象池复用的，不要缓存原生对象，包装器会随地图切换整批失效。
     /// </summary>
     public class GameCharacter : GameInstance, Drawing.IMapDrawTarget
     {

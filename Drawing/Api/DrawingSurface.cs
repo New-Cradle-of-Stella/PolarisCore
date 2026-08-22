@@ -20,8 +20,8 @@ namespace Polaris.Drawing
     }
 
     /// <summary>
-    /// Drawing 的保留模式画布。持有若干 <see cref="DrawNode"/>；节点只在首次构建或 <c>Invalidate()</c> 时
-    /// 重新生成几何/字形缓存。<see cref="Position"/>/<see cref="Visible"/> 是整个 Surface 的运行状态。
+    /// Drawing 的保留模式画布，持有若干 <see cref="DrawNode"/>；节点只在首次构建或 <c>Invalidate()</c> 时重新生成几何/字形缓存。
+    /// <see cref="Position"/>/<see cref="Visible"/> 是整个 Surface 的运行状态。
     /// </summary>
     public sealed class DrawingSurface : IDisposable
     {

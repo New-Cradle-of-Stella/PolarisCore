@@ -9,7 +9,7 @@ namespace Polaris.Drawing.Internal
     /// <summary>
     /// Map 后端：注册一个 <c>M2DrawBinder</c>（<see cref="DrawPlane"/> 决定 setEDC/setED/setEDT 哪一个），
     /// 每帧回调里只读固定/跟随锚点、检查相机范围、取当帧 Effect Mesh，并把节点已缓存的几何/字形/图片通过
-    /// <c>RotaTempMeshDrawer</c> 复制过去——这是阶段 0 验证过的路径，回调本身不做路径离散或三角化。
+    /// <c>RotaTempMeshDrawer</c> 复制过去，回调本身不做路径离散或三角化。
     /// 地图切换时自动在新地图上重新绑定同一批缓存好的节点，不重新跑用户的构建回调。
     /// </summary>
     internal sealed class MapDrawingBackend : IDrawingBackend

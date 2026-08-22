@@ -9,21 +9,13 @@ namespace Polaris
         public static partial class Game
         {
             /// <summary>
-            /// 剧情进度状态：具名全局旗标、具名全局计数器、剧情标记与主进度。
-            ///
-            /// 这四类都是**持久状态**——写进去就进存档，不随场景、事件或地图切换回滚。所以每个写入
-            /// 入口都返回"是否实际写入"，而不是静默成功：调用方需要能区分"写了"和"这个键不存在"。
+            /// 剧情进度状态：具名全局旗标、具名全局计数器、剧情标记与主进度，这四类都是**持久状态**——写进去就进存档，
+            /// 不随场景、事件或地图切换回滚。所以每个写入入口都返回"是否实际写入"而非静默成功，调用方需要能区分"写了"和"这个键不存在"。
             /// </summary>
             /// <remarks>
-            /// 键名校验是这一节存在的主要理由。原版的 GFB/GFC 底层是位数组，键名靠
-            /// <c>DEFINE_GFB_NAME</c> / <c>DEFINE_GFC_NAME</c> 建立的名字表映射到下标；名字表里没有
-            /// 的键会落到一个不确定的下标上，也就是踩到别的剧情旗标。因此所有写入都先过
-            /// <see cref="HasFlag"/> / <see cref="HasCounter"/>。
-            ///
-            /// 剧情标记（SF）没有这个问题：它本身就是字符串键的字典。
-            ///
-            /// 变更通知见 <c>GameStaticCallbackKind.StoryFlagChanged</c>——SF 的变化由 Core 自己的
-            /// 补丁发布，无论改动来自本 API、原版事件还是别的模组。
+            /// 键名校验是这一节存在的主要理由：原版 GFB/GFC 底层是位数组，键名靠名字表映射到下标，未登记的键会落到不确定的下标上、
+            /// 踩到别的剧情旗标，因此所有写入都先过 <see cref="HasFlag"/> / <see cref="HasCounter"/>。
+            /// 剧情标记（SF）本身是字符串键字典没有这个问题；变更统一由 Core 自己的补丁发布 <c>GameStaticCallbackKind.StoryFlagChanged</c> 通知，不论改动来源。
             /// </remarks>
             public static class Progress
             {

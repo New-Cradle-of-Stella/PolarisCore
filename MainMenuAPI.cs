@@ -280,11 +280,9 @@ namespace Polaris
         }
 
         // ================== 确定/取消按钮条 + 操作提示行 ==================
-        // DsBlack 是底部黑色按钮条的背景（private Designer 字段），remakeSumitCancelButton(false,false)
-        // 并不等于"都不显示"——内部会落到"只显示取消"分支，并把已隐藏的 DsBlack 重新显示出来；
-        // 真正要隐藏两侧时必须直接调用 DsBlack.hide()+SetActive(false)。操作提示行的文本来自
-        // TxOnePoint 字段，仅在 state >= STATE.TOP 时才自动刷新，我们的负数哨兵状态需要手动写。
-        // Current 为空（场景未初始化）时整体安静跳过。
+        // DsBlack 是底部黑色按钮条的背景；remakeSumitCancelButton(false,false) 不会真的隐藏两侧，
+        // 必须直接调用 DsBlack.hide()+SetActive(false)。操作提示行文本仅在 state >= STATE.TOP 时
+        // 自动刷新，负数哨兵状态需手动写；Current 为空时整体跳过。
 
         // DsBlack 初始样式是透明的（给"first_ask"提示用），真正的不透明黑底样式要
         // initDsBlackAfter() 设置一次（用 stencil_ref = 70 标记已初始化）。玩家在原版

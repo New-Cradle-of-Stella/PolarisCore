@@ -10,8 +10,7 @@ namespace Polaris.Drawing
     }
 
     /// <summary>
-    /// 绘制所在的平面。合法组合由 <see cref="DrawSpace"/> 决定：
-    /// Screen 只能用 <see cref="Background"/>/<see cref="Hud"/>/<see cref="Overlay"/>；
+    /// 绘制所在的平面，合法组合由 <see cref="DrawSpace"/> 决定：Screen 只能用 <see cref="Background"/>/<see cref="Hud"/>/<see cref="Overlay"/>，
     /// Map 只能用 <see cref="WorldBehindActors"/>/<see cref="WorldActors"/>/<see cref="WorldForeground"/>。
     /// 非法组合在 <c>DrawingAPI.CreateSurface</c> 时立即抛 <see cref="NotSupportedException"/>。
     /// </summary>
@@ -124,7 +123,7 @@ namespace Polaris.Drawing
     }
 
     /// <summary>
-    /// 节点的本地 2D 仿射变换：先缩放、再旋转、再平移。<see cref="Rotation"/> 单位是弧度。
+    /// 节点的本地 2D 仿射变换：先缩放、再旋转、再平移，<see cref="Rotation"/> 单位是弧度。
     /// 不暴露 Unity Matrix/Transform，调用方只能通过这三个分量组合。
     /// </summary>
     public readonly struct DrawTransform : IEquatable<DrawTransform>

@@ -4,10 +4,9 @@ using nel;
 namespace Polaris.API
 {
     /// <summary>
-    /// 一个技能的定义。取得实例的入口是 <c>PolarisAPI.Game.Skills</c>。
-    ///
-    /// 与 <see cref="GameEnhancer"/> 同理，这是<b>目录定义</b>的包装器：身份跟随原版 <c>PrSkill</c>
-    /// 对象引用，一局游戏内稳定；获得/启用/操作方式这些状态跟随当前存档变化。
+    /// 一个技能的定义，取得实例的入口是 <c>PolarisAPI.Game.Skills</c>。
+    /// 与 <see cref="GameEnhancer"/> 同理，这是<b>目录定义</b>的包装器（身份跟随原版 <c>PrSkill</c> 对象引用，一局游戏内稳定），
+    /// 获得/启用/操作方式等状态跟随当前存档变化。
     /// </summary>
     public sealed class GameSkill : GameInstance
     {
@@ -134,7 +133,7 @@ namespace Polaris.API
             }
         }
 
-        /// <summary>查询指定操作方式是否启用；序号非法时返回 <c>false</c>（与文本查询刻意不同，见 v3 规范）。</summary>
+        /// <summary>查询指定操作方式是否启用；序号非法时返回 <c>false</c> 而非像 <see cref="GetManipulationText"/> 那样抛异常，方便按序号遍历。</summary>
         public bool IsManipulationEnabled(int option)
         {
             if (option < 0 || option >= ManipulationCount)
@@ -146,7 +145,7 @@ namespace Polaris.API
         }
 
         /// <summary>
-        /// 获得该技能。首次获得走原版 <c>PrSkill.Obtain(!enable)</c>；已经获得时不重复获得，
+        /// 获得该技能：首次获得走原版 <c>PrSkill.Obtain(!enable)</c>，已获得时不重复获得，
         /// 但 <paramref name="enable"/> 为 <c>true</c> 时仍会按契约确保它处于启用状态。
         /// 返回状态是否<b>实际</b>发生了变化。
         /// </summary>
@@ -275,9 +274,8 @@ namespace Polaris.API
         }
 
         /// <summary>
-        /// 修改指定操作方式。未获得、技能未启用、序号非法或原版状态拒绝时返回 <c>false</c>。
-        /// <c>manip_multi</c> 为 <c>false</c> 时启用一个选项会原子关闭其它选项；
-        /// 已启用技能的最后一个选项不允许关闭（原版读档时也会把这种状态修回来）。
+        /// 修改指定操作方式；未获得、技能未启用、序号非法或原版状态拒绝时返回 <c>false</c>。
+        /// <c>manip_multi</c> 为 <c>false</c> 时启用一个选项会原子关闭其它选项，已启用技能的最后一个选项不允许关闭。
         /// </summary>
         public bool SetManipulationEnabled(int option, bool enabled)
         {

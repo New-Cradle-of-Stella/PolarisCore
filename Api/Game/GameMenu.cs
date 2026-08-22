@@ -4,12 +4,10 @@ using nel.gm;
 namespace Polaris.API
 {
     /// <summary>
-    /// 游戏内 ESC 菜单的一次打开。入口是 <c>PolarisAPI.Game.Menu</c> 与 <see cref="GameStaticCallbackKind.GameMenuOpened"/> 回调。
-    /// 注意区分 <c>PolarisAPI.GameMenu</c>（菜单分类扩展注册表）：名字接近但不是一回事。
-    ///
-    /// 同一个包装器覆盖"请求已接受但菜单尚未激活"（<see cref="requestPending"/>）到"已激活"的整个生命周期：
-    /// 底层 <c>UiGameMenu</c> 对象在一局游戏内是复用的单例，激活前 <c>state</c> 仍是 <c>OFFLINE</c>，
-    /// 不能靠它判断"这个包装器还有没有意义"，所以待处理阶段单独用一个标志位追踪。
+    /// 游戏内 ESC 菜单的一次打开，入口是 <c>PolarisAPI.Game.Menu</c> 与 <see cref="GameStaticCallbackKind.GameMenuOpened"/> 回调
+    /// （注意与菜单分类扩展注册表 <c>PolarisAPI.GameMenu</c> 区分，名字接近但不是一回事）。
+    /// 同一个包装器覆盖"请求已接受但菜单尚未激活"到"已激活"的整个生命周期：底层 <c>UiGameMenu</c> 是复用单例，
+    /// 激活前 <c>state</c> 仍是 <c>OFFLINE</c>，所以待处理阶段单独用一个标志位（<see cref="requestPending"/>）追踪。
     /// </summary>
     public sealed class GameMenu : GameInstance
     {
@@ -125,9 +123,8 @@ namespace Polaris.API
         }
 
         /// <summary>
-        /// 关闭该菜单实例。<paramref name="immediate"/> 为真时跳过关闭动画。
-        /// 对仍处于"待激活"阶段的包装器，这会取消尚未兑现的打开请求而不是关闭一个不存在的菜单；
-        /// 对已激活的包装器，这会走原版 <c>deactivate()</c> 流程。两种情况下包装器随后都失效。
+        /// 关闭该菜单实例（<paramref name="immediate"/> 为真时跳过关闭动画）：待激活的包装器会取消尚未兑现的打开请求，
+        /// 已激活的包装器走原版 <c>deactivate()</c> 流程。两种情况下包装器随后都失效。
         /// </summary>
         public void Close(bool immediate = false)
         {

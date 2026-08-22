@@ -4,7 +4,7 @@ namespace Polaris.Settings
 {
     /// <summary>
     /// 标在静态字段上，把它变成一个设置项；字段本身就是值的真身，须配合类上的 <see cref="PolarisSettingGroupAttribute"/> 使用。
-    /// 控件类型由字段类型推断：<c>bool</c>→开关，<c>float</c>/<c>double</c>→滑条，<c>int</c>→整数滑条（有 <see cref="Choices"/> 则多选一），<c>enum</c>→选择器，<c>string</c>→文本输入。
+    /// 控件类型由字段类型推断（<c>bool</c>→开关，<c>float</c>/<c>double</c>→滑条，<c>int</c>→整数滑条或多选一，<c>enum</c>→选择器，<c>string</c>→文本输入），
     /// <see cref="Label"/>/<see cref="Desc"/>/<see cref="Choices"/> 遵守 <c>&amp;</c> 本地化键约定（见 <see cref="Localization.LocalizedString"/>）。
     /// </summary>
     /// <example>

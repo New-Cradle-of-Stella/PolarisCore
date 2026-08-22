@@ -6,8 +6,7 @@ using UnityEngine;
 namespace Polaris.Diagnostics
 {
     /// <summary>
-    /// Core 自带的全局兜底：接住 Unity、AppDomain 与 BepInEx 错误通道。
-    /// 高级诊断模块存在时转交给其分析；不存在时仍由 Core 记录并保留有限的早期错误。
+    /// Core 自带的全局兜底：接住 Unity、AppDomain 与 BepInEx 错误通道，高级诊断模块存在时转交给其分析，不存在时仍由 Core 记录并保留有限的早期错误。
     /// 已知缺口：比 Polaris 更早 <c>Awake</c> 的插件自身抛的异常抓不到，但 BepInEx 自己会记录那类失败。
     /// </summary>
     internal static class CoreErrorCapture

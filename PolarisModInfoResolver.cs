@@ -7,10 +7,9 @@ using BepInEx.Unity.Mono.Bootstrap;
 namespace Polaris
 {
     /// <summary>
-    /// 按 dll 文件名检索 <see cref="PolarisModInfo"/>。信息来自已加载 BepInEx 插件上的
-    /// <see cref="PolarisModInfoAttribute"/>（读不到特性时退化成 BepInPlugin 元数据 / 文件名），
-    /// 因此只对本次游戏真正加载了的 dll 有效——被禁用成 <c>.dll.disabled</c> 的模组读不到信息。
-    /// 一局游戏里插件集合不会变，结果建一次缓存长期复用；如需重新读取调用 <see cref="Invalidate"/>。
+    /// 按 dll 文件名检索 <see cref="PolarisModInfo"/>；信息来自已加载 BepInEx 插件上的
+    /// <see cref="PolarisModInfoAttribute"/>（读不到时退化成 BepInPlugin 元数据/文件名），只对本次真正加载了的 dll 有效。
+    /// 结果建一次缓存长期复用；如需重新读取调用 <see cref="Invalidate"/>。
     /// </summary>
     internal static class PolarisModInfoResolver
     {

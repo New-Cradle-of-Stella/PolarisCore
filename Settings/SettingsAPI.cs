@@ -5,7 +5,7 @@ using System.Linq;
 namespace Polaris.Settings
 {
     /// <summary>
-    /// 设置项 API，从 <see cref="PolarisAPI.Settings"/> 取。声明设置项只有一条途径：给静态字段标 <see cref="PolarisSettingAttribute"/>（类上再标 <see cref="PolarisSettingGroupAttribute"/>），
+    /// 设置项 API，从 <see cref="PolarisAPI.Settings"/> 取；声明设置项只有一条途径：给静态字段标 <see cref="PolarisSettingAttribute"/>（类上再标 <see cref="PolarisSettingGroupAttribute"/>），
     /// 统一由 <see cref="SettingsAttributeScanner.ScanAll"/> 在 <c>Plugin.Start</c> 扫描注册，避免注册晚于设置界面构造导致本局不生效。
     /// 声明后的设置项自动渲染到原版设置界面并持久化到 <c>BepInEx/config/Polaris/&lt;modId&gt;.cfg</c>。
     /// </summary>

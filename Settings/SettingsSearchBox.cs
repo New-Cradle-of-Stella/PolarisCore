@@ -4,7 +4,7 @@ using XX;
 namespace Polaris.Settings
 {
     /// <summary>
-    /// 设置界面底部那条搜索栏。画法在 <see cref="PolarisSearchRow"/>（与模组管理页共用），这里只管栏高与接到 <see cref="SettingsSearchFilter"/>。
+    /// 设置界面底部那条搜索栏，画法在 <see cref="PolarisSearchRow"/>（与模组管理页共用），这里只管栏高与接到 <see cref="SettingsSearchFilter"/>。
     /// 标题画面与 ESC 菜单共用同一静态实例，因同一时刻只有一个设置界面立着。
     /// </summary>
     internal static class SettingsSearchBox

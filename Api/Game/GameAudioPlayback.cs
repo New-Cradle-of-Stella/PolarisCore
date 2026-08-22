@@ -26,7 +26,7 @@ namespace Polaris.API
             bornFrame = SafeFrame();
         }
 
-        /// <summary>这次播放的 cue 名。规范没有列这一项，所以只在库内部使用（诊断与回调负荷）。</summary>
+        /// <summary>这次播放的 cue 名，不对外公开，只在库内部使用（诊断与回调负荷）。</summary>
         internal string Cue { get; }
 
         private protected override bool IsNativeAlive => !released && player != null;

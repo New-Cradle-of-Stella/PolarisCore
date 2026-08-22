@@ -10,7 +10,7 @@ namespace Polaris.Drawing
     public interface IMapDrawTarget
     {
         /// <summary>
-        /// 返回当前地图坐标。目标暂时不可用、已离开地图或已失效时返回 false。
+        /// 返回当前地图坐标；目标暂时不可用、已离开地图或已失效时返回 false。
         /// 该方法只会在 Unity 主线程调用。
         /// </summary>
         bool TryGetMapPosition(out DrawPoint position);

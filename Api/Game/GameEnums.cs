@@ -219,8 +219,8 @@ namespace Polaris.API
     }
 
     /// <summary>
-    /// 技能分类（位标志）。<b>独立编号</b>，不跟随游戏内部的 <c>SKILL_CTG</c>：那个枚举的数值随版本调整，
-    /// 直接暴露或强制转换会让模组在下一次游戏更新后静默错位。映射表在 <c>GameSkill</c> 内部显式维护。
+    /// 技能分类（位标志），<b>独立编号</b>，不跟随游戏内部的 <c>SKILL_CTG</c>——那个枚举的数值随版本调整，
+    /// 直接暴露会让模组在下一次游戏更新后静默错位。映射表在 <c>GameSkill</c> 内部显式维护。
     /// </summary>
     [System.Flags]
     public enum GameSkillCategory

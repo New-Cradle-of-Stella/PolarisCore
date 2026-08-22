@@ -43,9 +43,8 @@ namespace Polaris.Infra
             => DiagnosticsHost.ExpectStall(reason, seconds);
 
         /// <summary>
-        /// 留一条面包屑，告诉 Polaris"我现在开始执行这件事"，卡死时报告能直接说出卡在哪一步。
-        /// Polaris 已在多数转发模组代码的关口（模块初始化、补丁应用等）自动埋点，值得手动调的是耗时长又不经 Polaris 转发的活儿（自己的 Update、协程、Harmony 补丁循环）。
-        /// 只在主线程有效；后台线程调用会拿到一个空操作对象。
+        /// 留一条面包屑，告诉 Polaris"我现在开始执行这件事"，卡死时报告能直接说出卡在哪一步；只在主线程有效，后台线程调用会拿到一个空操作对象。
+        /// Polaris 已在多数转发模组代码的关口自动埋点，值得手动调的是耗时长又不经 Polaris 转发的活儿（自己的 Update、协程、Harmony 补丁循环）。
         /// </summary>
         /// <param name="what">给人看的一句话，例如 <c>"重建服装图集"</c>。</param>
         /// <param name="owner">责任程序集，通常是 <c>GetType().Assembly</c>；给了它卡死报告能直接点名模组。</param>

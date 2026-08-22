@@ -85,10 +85,8 @@ namespace Polaris.API
             GameStorage.InvalidateAllStorages();
             GameQuest.InvalidateAllQuests();
 
-            // 插件/技能的目录对象在新游戏与读档时并<b>不</b>重建：ENHA.newGame 只清槽位计数，
-            // SkillManager.newGame 是就地重置同一批 PrSkill 的状态字段。所以这里刻意不作废包装器
-            // （那会白白丢掉调用方持有的实例身份），只清空观察基线：下一帧把存档值当成新基线记录，
-            // 不发回调，避免读档产生初值风暴。真正换了目录对象时，InstanceTable 会自然给出新身份。
+            // 插件/技能的目录对象在新游戏与读档时并不重建，所以这里刻意不作废包装器（避免丢掉调用方持有的实例身份），
+            // 只清空观察基线：下一帧把存档值当成新基线记录，不发回调，避免读档产生初值风暴。真正换了目录对象时，InstanceTable 会自然给出新身份。
             GameEnhancerRuntime.Reset();
             GameSkillRuntime.Reset();
             GameEventRuntime.Reset();

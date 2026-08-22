@@ -50,7 +50,7 @@ namespace Polaris.API
 
             skill.CaptureBaseline(obtained, enabled, manipBits);
 
-            // 顺序固定（计划 5.5）：获得并启用＝先 Obtained 后 Enabled；
+            // 顺序固定：获得并启用＝先 Obtained 后 Enabled；
             // 启用中被移除＝先 Enabled 后 Obtained。
             bool obtainedGained = obtained && !previousObtained;
 
@@ -112,7 +112,7 @@ namespace Polaris.API
                 skill,
                 () => new SkillEnabledChangedCallbackData(skill, previous, current));
 
-        /// <summary>技能连接重算。必须在回调入队之前跑完（计划第 3 节）。</summary>
+        /// <summary>技能连接重算。必须在回调入队之前跑完。</summary>
         internal static bool Recalculate()
         {
             try

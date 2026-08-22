@@ -4,11 +4,9 @@ using nel;
 namespace Polaris.API
 {
     /// <summary>
-    /// 一种游戏内插件（Enhancer）的定义。取得实例的入口是 <c>PolarisAPI.Game.Enhancers</c>。
-    ///
-    /// 这是<b>目录定义</b>的包装器，不是"背包里的那一个"：身份跟随原版 <c>ENHA.Enhancer</c> 对象引用，
-    /// 一局游戏内稳定；而 <see cref="IsObtained"/>/<see cref="IsActive"/> 这些状态跟随当前存档变化。
-    /// 数量仍归 <see cref="GameStorage"/>，这里不复制库存接口。
+    /// 一种游戏内插件（Enhancer）的定义，取得实例的入口是 <c>PolarisAPI.Game.Enhancers</c>。
+    /// 这是<b>目录定义</b>的包装器（身份跟随原版 <c>ENHA.Enhancer</c> 对象引用，一局游戏内稳定），
+    /// <see cref="IsObtained"/>/<see cref="IsActive"/> 等状态跟随当前存档变化，数量仍归 <see cref="GameStorage"/>。
     /// </summary>
     public sealed class GameEnhancer : GameInstance
     {
@@ -93,7 +91,7 @@ namespace Polaris.API
         }
 
         /// <summary>
-        /// 查询当前能不能启用该插件以及拒绝原因。<b>纯查询</b>：不改 grade、不改槽位、不触发任何重算。
+        /// 查询当前能不能启用该插件以及拒绝原因；<b>纯查询</b>，不改 grade、不改槽位、不触发任何重算。
         /// 已经启用时返回 <see cref="GameEnhancerActivationStatus.Active"/>。
         /// </summary>
         public GameEnhancerActivationStatus ActivationStatus
@@ -137,7 +135,7 @@ namespace Polaris.API
         }
 
         /// <summary>
-        /// 获得该插件（把关联物品放进强化品存储）。已经拥有时不重复变更并返回 <c>false</c>。
+        /// 获得该插件（把关联物品放进强化品存储），已经拥有时不重复变更并返回 <c>false</c>。
         /// <paramref name="notify"/> 只控制是否显示原版获得通知，不影响数据修改和回调。
         /// </summary>
         public bool Obtain(bool notify = false)
@@ -178,7 +176,7 @@ namespace Polaris.API
         }
 
         /// <summary>
-        /// 移除该插件。若正在启用，先原子停用并重算，再从强化品存储移除。
+        /// 移除该插件：若正在启用，先原子停用并重算，再从强化品存储移除。
         /// 返回状态是否<b>实际</b>发生了变化。
         /// </summary>
         public bool Revoke()
@@ -277,7 +275,7 @@ namespace Polaris.API
                 return GameEnhancerActivationStatus.Failed;
             }
 
-            // 重算完成后才发布,保证订阅者读到的属性/连接已经是新状态（计划第 3 节）。
+            // 重算完成后才发布,保证订阅者读到的属性/连接已经是新状态。
             GameEnhancerRuntime.PublishFor(this);
 
             return IsActive ? GameEnhancerActivationStatus.Active : GameEnhancerActivationStatus.Inactive;

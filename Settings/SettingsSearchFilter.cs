@@ -6,7 +6,7 @@ using XX;
 namespace Polaris.Settings
 {
     /// <summary>
-    /// 设置界面的搜索过滤：记住每个块属于哪个分区/设置项，按查询串把不匹配的行收起来（置 <c>DsnMem.active = false</c>，靠原版行管理器的重排机制不占位，不重建界面）。
+    /// 设置界面的搜索过滤：记住每个块属于哪个分区/设置项，按查询串把不匹配的行收起来（置 <c>DsnMem.active = false</c>，靠原版行管理器的重排机制不占位，不重建界面），
     /// 过滤范围只含 Polaris 注册的设置项，原版行始终原样保留。全局单例，同一时刻只有一个设置界面立着。
     /// </summary>
     internal static class SettingsSearchFilter

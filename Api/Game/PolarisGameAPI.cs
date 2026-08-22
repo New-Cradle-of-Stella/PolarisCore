@@ -241,10 +241,9 @@ namespace Polaris
                     => Night(n => n.hasWeather((WeatherItem.WEATHER)(uint)weather), false);
 
                 /// <summary>
-                /// 强制设置指定天气，返回是否设置成功；走游戏的"临时天气"通道，直接改写基础天气会在下次日夜推进时被抹掉。
-                /// 非本版本枚举里的值直接返回 <c>false</c>，不碰游戏状态；<see cref="GameWeather.Normal"/> 表示"没有天气"，
-                /// 因此撤掉临时天气再清一次当前天气，而不是写掩码。其余天气写的是 <c>1 &lt;&lt; 枚举值</c> 的位掩码
-                /// （与 <c>WeatherChangedCallbackData.Has</c> 同一套约定），写完回读一次确认真的生效。
+                /// 强制设置指定天气并返回是否成功；走游戏的"临时天气"通道，因为直接改写基础天气会在下次日夜推进时被抹掉。
+                /// 非本版本枚举值直接返回 <c>false</c> 且不碰游戏状态，<see cref="GameWeather.Normal"/> 按“清除天气”处理，
+                /// 其余按 <c>WeatherChangedCallbackData.Has</c> 约定的位掩码写入并回读确认生效。
                 /// </summary>
                 public static bool SetWeather(GameWeather weather)
                 {
@@ -371,9 +370,8 @@ namespace Polaris
             }
 
             /// <summary>
-            /// 游戏内 ESC 菜单。查询、打开、关闭都归这里；"菜单打开时是否暂停世界"的策略和菜单分类注册
-            /// 归 <see cref="Polaris.GameMenuAPI"/>。<see cref="Open"/>/<see cref="TryOpen"/> 走原版
-            /// <c>menu_open</c> 正常请求流程，不直接调用 <c>UiGameMenu.activate()</c>。
+            /// 游戏内 ESC 菜单：查询、打开、关闭都归这里，"菜单打开时是否暂停世界"的策略和菜单分类注册归 <see cref="Polaris.GameMenuAPI"/>。
+            /// <see cref="Open"/>/<see cref="TryOpen"/> 走原版 <c>menu_open</c> 正常请求流程，不直接调用 <c>UiGameMenu.activate()</c>。
             /// </summary>
             public static class Menu
             {

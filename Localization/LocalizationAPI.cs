@@ -43,9 +43,8 @@ namespace Polaris.Localization
         }
 
         /// <summary>
-        /// 把"显示用字符串"解析为最终文案：<c>&amp;</c> 开头查表，<c>&amp;&amp;</c> 开头脱转义，其余原样返回。
+        /// 把"显示用字符串"解析为最终文案：<c>&amp;</c> 开头查表，<c>&amp;&amp;</c> 开头脱转义，其余原样返回；<paramref name="raw"/> 为 null 时返回 null。
         /// 查表顺序为内置表/resolver 链 → 原版 <c>TX.Get</c> → key 本身（兜底显示 key 便于定位未登记文案）。
-        /// <paramref name="raw"/> 为 null 时返回 null。
         /// </summary>
         public string Text(string raw)
         {

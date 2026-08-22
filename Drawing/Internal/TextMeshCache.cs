@@ -4,10 +4,9 @@ using XX;
 namespace Polaris.Drawing.Internal
 {
     /// <summary>
-    /// 一条文本命令对应的 <see cref="TextRenderer"/> 缓存。Screen 用它直接可见渲染（<c>visible: true</c>，
-    /// 打开 Valotile）；Map 用它做隐藏的字形缓存（<c>visible: false</c>，关掉自身 MeshRenderer，只把生成的
-    /// 网格通过 <c>RotaTempMeshDrawer</c> 复制到 Effect Mesh，见 <see cref="MapDrawingBackend"/>）。
-    /// 只有文本内容或样式真的变化时才会重新排版；位置/透明度变化都走各自后端的廉价路径。
+    /// 一条文本命令对应的 <see cref="TextRenderer"/> 缓存：Screen 用它直接可见渲染（<c>visible: true</c>，打开 Valotile）；
+    /// Map 用它做隐藏的字形缓存（<c>visible: false</c>，关掉自身 MeshRenderer，只把生成的网格复制到 Effect Mesh，见 <see cref="MapDrawingBackend"/>）。
+    /// 只有文本内容或样式真的变化时才会重新排版，位置/透明度变化都走各自后端的廉价路径。
     /// </summary>
     internal sealed class TextMeshCacheEntry
     {

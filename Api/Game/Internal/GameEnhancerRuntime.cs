@@ -53,7 +53,7 @@ namespace Polaris.API
             // 先更新快照再发布：订阅者可能同步回调进来再读一次状态,不能让它看到旧快照。
             enhancer.CaptureBaseline(obtained, active);
 
-            // 顺序固定（计划 5.5）：获得并启用是"先获得后启用"；启用中被移除是"先停用后失去"。
+            // 顺序固定：获得并启用是"先获得后启用"；启用中被移除是"先停用后失去"。
             bool obtainedGained = obtained && !previousObtained;
 
             if (obtainedGained && obtained != previousObtained)
@@ -85,9 +85,9 @@ namespace Polaris.API
                 () => new EnhancerActiveChangedCallbackData(enhancer, previous, current));
 
         /// <summary>
-        /// 状态写入后的原版重算。<c>fineEnhancerStorage</c> 会修正超出槽位的非法启用项并重建
-        /// <c>enhancer_bits</c>；<c>resetSkillConnectionWhole</c> 让属性/技能连接跟上。
-        /// 两者都要跑完，回调才允许入队（计划第 3 节）。
+        /// 状态写入后的原版重算：<c>fineEnhancerStorage</c> 会修正超出槽位的非法启用项并重建
+        /// <c>enhancer_bits</c>，<c>resetSkillConnectionWhole</c> 让属性/技能连接跟上。
+        /// 两者都要跑完，回调才允许入队。
         /// </summary>
         internal static bool Recalculate()
         {

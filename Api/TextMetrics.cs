@@ -8,8 +8,8 @@ namespace Polaris.API
     internal static class TextMetrics
     {
         /// <summary>
-        /// 文本实际占用的高度（像素，含上下留白）。用 <c>Tm.get_sheight_px()</c> 而非公开的
-        /// <c>FillBlock.get_sheight_px()</c>，因为后者对固定高度的块总返回固定值。文案为空时返回 0。
+        /// 文本实际占用的高度（像素，含上下留白），文案为空时返回 0。用 <c>Tm.get_sheight_px()</c> 而非公开的
+        /// <c>FillBlock.get_sheight_px()</c>，因为后者对固定高度的块总返回固定值。
         /// </summary>
         internal static float TextHeightOf(FillBlock block)
         {

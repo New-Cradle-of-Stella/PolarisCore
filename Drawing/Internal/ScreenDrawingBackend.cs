@@ -6,13 +6,9 @@ using XX;
 namespace Polaris.Drawing.Internal
 {
     /// <summary>
-    /// Screen 后端：GUI Layer 上的一个 <c>MultiMeshRenderer</c> 宿主，每个可见节点各自拥有一个
-    /// <c>MeshDrawer</c>（通过 <c>Make(...)</c> 得到，同时也是它自己的子 GameObject）。
-    /// 节点的位置/旋转/缩放/深度都是那个子 GameObject 的 Unity Transform，不重新三角化；
-    /// 不透明度通过重新推送已烘焙好的顶点颜色数组实现，同样不重新三角化。
-    /// 文本命令是各自独立、可见的 <c>TextRenderer</c> 子物体，直接摆放，不经过网格复制。
-    /// 图片命令也各自拥有一个 <c>MeshDrawer</c>（贴图不同不能共享材质），四个角在烘焙时就已经乘过
-    /// PushTransform 折出来的矩阵，运行时只需要像形状一样挪子物体的 Unity Transform。
+    /// Screen 后端：GUI Layer 上的 <c>MultiMeshRenderer</c> 宿主，每个可见节点各自拥有一个 <c>MeshDrawer</c>（自己的子 GameObject），
+    /// 位置/旋转/缩放/深度复用该 GameObject 的 Unity Transform、不透明度靠重推已烘焙的顶点颜色，均不重新三角化。
+    /// 文本命令是独立的 <c>TextRenderer</c> 子物体直接摆放；图片命令各自一个 <c>MeshDrawer</c>（贴图不同不能共享材质），四角矩阵烘焙时已算好，运行时只需挪 Transform。
     /// </summary>
     internal sealed class ScreenDrawingBackend : IDrawingBackend
     {

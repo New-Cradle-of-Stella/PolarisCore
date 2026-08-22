@@ -5,8 +5,7 @@ using XX;
 namespace Polaris
 {
     /// <summary>
-    /// 一行搜索栏：标签 + 输入框 + 右侧状态文字，被设置界面与模组管理页共用同一份实现。
-    /// 输入走 <c>fnChangedDelay</c>（带防抖，且拿到的是最新值而非 fnChanged 的旧值）。
+    /// 一行搜索栏：标签 + 输入框 + 右侧状态文字，被设置界面与模组管理页共用同一份实现，输入走 <c>fnChangedDelay</c> 防抖。
     /// 过滤回调里不要重建所在 designer，会把正在输入的控件销毁；只应就地拨块显隐（见 <see cref="SetVisible"/>）。
     /// </summary>
     internal sealed class PolarisSearchRow

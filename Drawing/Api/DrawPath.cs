@@ -31,9 +31,8 @@ namespace Polaris.Drawing
     }
 
     /// <summary>
-    /// 任意路径：直线、二次/三次贝塞尔曲线与子路径闭合。可以有多个子路径（多次 <see cref="MoveTo"/>），
-    /// 从而支持带孔轮廓。路径本身只是数据；离散、三角化与缓存在渲染时（见 <see cref="Internal.PathGeometry"/>）
-    /// 才发生，只在节点构建/<c>Invalidate()</c> 时跑一次。
+    /// 任意路径：直线、二次/三次贝塞尔曲线与子路径闭合，可以有多个子路径（多次 <see cref="MoveTo"/>）以支持带孔轮廓。
+    /// 路径本身只是数据，离散、三角化与缓存只在渲染时（见 <see cref="Internal.PathGeometry"/>）发生一次。
     /// </summary>
     /// <remarks>曲线用自适应细分离散；填充按轮廓包含深度处理嵌套。</remarks>
     public sealed class DrawPath

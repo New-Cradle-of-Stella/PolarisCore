@@ -4,11 +4,9 @@ using XX;
 namespace Polaris
 {
     /// <summary>
-    /// 标题告知页显示期间，压住原版语言按钮 <c>DsLang</c>、外链按钮 <c>DsLink</c> 与提示文本，
-    /// 否则它们隔着告知页仍然可点（点击命中测试与遮挡无关）。用 <c>Designer.alpha = 0</c> 压制，
-    /// 因为它同时挡住可见性与点击判定（<c>aBtn.clickable</c> 检查 Skin.alpha），且没有副作用要还原。
-    /// 键盘/手柄换语言绕过点击判定，单独由 <see cref="Patch.Patch_SceneTitleTemp_languageShift"/> 拦掉。
-    /// 须每帧重设：原版每帧都会重写这些 alpha。
+    /// 标题告知页显示期间，用 <c>Designer.alpha = 0</c> 压住原版语言按钮 <c>DsLang</c>、外链按钮 <c>DsLink</c> 与提示文本，
+    /// 因为它同时挡住可见性与点击判定（<c>aBtn.clickable</c> 检查 Skin.alpha）且没有副作用要还原。
+    /// 键盘/手柄换语言绕过点击判定，单独由 <see cref="Patch.Patch_SceneTitleTemp_languageShift"/> 拦掉；须每帧重设，原版每帧都会重写这些 alpha。
     /// </summary>
     internal static class TitleChrome
     {

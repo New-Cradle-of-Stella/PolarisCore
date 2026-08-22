@@ -11,9 +11,8 @@ namespace Polaris.Content
     public static class ContentRegistrarScanner
     {
         /// <summary>
-        /// 扫描 <c>PolarisAPI.Types.InPluginsWith&lt;TAttr&gt;()</c> 找到的类型，逐个实例化（允许非公开构造函数）
-        /// 并转换为 <typeparamref name="TRegistrar"/>，交给 <paramref name="run"/> 处理；<paramref name="run"/>
-        /// 同时收到触发扫描的类型，供需要按来源分账的调用方使用（例如据此设置冲突判定用的"当前来源"）。
+        /// 扫描 <c>PolarisAPI.Types.InPluginsWith&lt;TAttr&gt;()</c> 找到的类型，逐个实例化（允许非公开构造函数）并转换为
+        /// <typeparamref name="TRegistrar"/>，连同触发扫描的类型一起交给 <paramref name="run"/> 处理（例如据此设置冲突判定用的"当前来源"）。
         /// 一个类型实例化或处理失败不影响其它类型；默认通过 <see cref="PolarisAPI.Errors"/> 上报。
         /// </summary>
         /// <returns>成功处理的类型数量。</returns>
